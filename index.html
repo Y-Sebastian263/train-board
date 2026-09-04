@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>名古屋→大阪 鉄道すごろく v0.13</title>
+<style>
+:root{
+  --bg:#0b1020;--panel:#111a31;--panel2:#17223d;--text:#f7f8fc;--muted:#aab4cc;
+  --accent:#ffd54a;--ok:#6ee7b7;--danger:#fb7185;--blue:#60a5fa;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:linear-gradient(135deg,#080c18,#10172a);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+.app{min-height:100vh;padding:12px;display:block}
+.topbar{margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border:1px solid #263658;border-radius:14px;padding:10px}
+.brand{font-weight:1000;font-size:clamp(17px,1.8vw,28px);letter-spacing:.02em}
+.badge{padding:6px 9px;border-radius:999px;background:#223050;color:#dbe7ff;font-size:11px;white-space:nowrap}
+.badge.good{background:#124f3f;color:#caffec}.badge.warn{background:#684c12;color:#fff3c2}
+.topbar .spacer{flex:1}
+.btn{border:0;border-radius:11px;padding:9px 12px;background:#223050;color:#fff;font-weight:850}
+.btn:hover{filter:brightness(1.1)}.btn.primary{background:var(--accent);color:#191600}.btn.green{background:#1f8c67}.btn.red{background:#a83349}.btn.special{background:#5947a8}.btn.ghost{background:transparent;border:1px solid #3a4b72}.btn:disabled{opacity:.45;cursor:not-allowed}
+.searchBox{display:flex;gap:6px;min-width:min(360px,100%)}.searchBox input{min-width:0}
+.layout{display:block;min-height:0;width:100%}
+.stageWrap{display:block;width:100%;min-width:0}
+.stage{width:100%;aspect-ratio:16/9;max-height:none;background:#dbeafe;border-radius:18px;overflow:hidden;position:relative;box-shadow:0 18px 50px #0008;touch-action:none}
+.mapViewport{position:absolute;inset:0;overflow:hidden;background:linear-gradient(#e8f7ff,#edf7e8)}
+#mapScene{position:absolute;left:0;top:0;width:3600px;height:2000px;transform-origin:0 0;transition:transform .5s cubic-bezier(.2,.75,.2,1)}
+#mapSvg{position:absolute;inset:0;width:3600px;height:2000px;overflow:visible}
+.prefLabel{font-size:74px;font-weight:1000;fill:#27415b;opacity:.11;pointer-events:none;letter-spacing:.08em}
+.route{fill:none;stroke-width:2.67;stroke-linecap:round;stroke-linejoin:round;opacity:.78;vector-effect:non-scaling-stroke}
+.route.selected{stroke-width:4.33;opacity:1;filter:drop-shadow(0 0 2px #fff)}
+.station circle{fill:#fff;stroke:#17223d;stroke-width:.93;vector-effect:non-scaling-stroke}.station text{font-weight:900;fill:#101828;paint-order:stroke;stroke:#fff;stroke-linejoin:round;pointer-events:none;dominant-baseline:middle}.station text.labelHidden{display:none}.station.current circle{fill:#fde047;stroke:#7c5d00;stroke-width:.93;filter:drop-shadow(0 0 1px #facc15)}.station.available circle{fill:#86efac}.station:hover circle{fill:#93c5fd}
+.token{position:absolute;width:27px;height:27px;border-radius:50%;border:2.5px solid #fff;background:#111827 center/cover no-repeat;box-shadow:0 3px 9px #0008;transform:translate(-50%,-78%);z-index:20;transition:left .38s ease,top .38s ease}
+.hud{position:absolute;left:14px;right:14px;top:12px;z-index:30;display:flex;gap:9px;align-items:flex-start;pointer-events:none}
+.hudCard{background:#07111de5;color:#fff;border:1px solid #ffffff2b;border-radius:14px;padding:9px 13px;backdrop-filter:blur(8px)}
+.hudLabel{font-size:clamp(20px,1.8vw,28px);font-weight:950;color:#e7eefc;line-height:1.1}.hudBig{font-size:clamp(36px,4.2vw,64px);line-height:1.05;font-weight:1000;overflow-wrap:anywhere}.hudSub{font-size:clamp(10px,.9vw,14px);color:#d2dbec}.hud .grow{flex:1;min-width:0}.currentHud{max-width:40%;min-width:0}.progress{max-width:58%;min-width:0}.hudTitleRow{display:flex;align-items:center;gap:10px}.hudTitleRow .hudLabel{flex:1}.moveHistoryToggle{pointer-events:auto;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid #ffffff45;background:#1b2946;color:#fff;font-size:25px;font-weight:900;line-height:1;cursor:pointer;flex:0 0 auto}.moveHistoryToggle:hover{filter:brightness(1.15)}.moveHistoryPanel{display:none;margin-top:10px;padding-top:9px;border-top:1px solid #ffffff30;max-height:126px;overflow:auto;pointer-events:auto}.moveHistoryPanel.show{display:block}.moveHistoryTitle{font-size:12px;font-weight:900;color:#aebbd3;margin-bottom:5px}.moveHistoryContent{font-size:clamp(12px,1vw,16px);line-height:1.5;color:#f3f6fb;font-weight:750;word-break:break-word}
+.bottomAction{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:31;display:flex;gap:9px;align-items:center}
+.diceBtn{min-width:185px;border:0;border-radius:18px;padding:12px 18px;font-size:clamp(18px,2vw,27px);font-weight:1000;background:#ffd54a;color:#191600;box-shadow:0 10px 25px #0004}.diceBtn:disabled{opacity:.45;cursor:not-allowed}.dieResult{min-width:82px;text-align:center;border-radius:16px;padding:9px 14px;background:#07111de8;font-size:clamp(24px,3vw,44px);font-weight:1000;border:1px solid #fff3}
+.side{margin-top:12px;background:transparent;border-radius:0;padding:0;overflow:visible;max-height:none;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px;align-items:start}
+.section{background:var(--panel2);border:1px solid #263658;border-radius:14px;padding:12px;margin:0;min-width:0}.section h3{margin:0 0 9px;font-size:15px}.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.stat{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;font-size:13px;padding:4px 0;color:#dbe5f8}.log{font-size:12px;color:#cad4e8;max-height:220px;overflow:auto;line-height:1.45}.itinerary{font-size:12px;max-height:220px;overflow:auto}.item{padding:8px;border-radius:10px;background:#10182c;margin-bottom:6px;border-left:4px solid #ffd54a}.routeNote{font-size:11px;color:#b9c3d9;line-height:1.55;background:#0d1529;border:1px solid #263658;border-radius:12px;padding:10px;grid-column:1/-1}.gameSection{grid-column:span 5}.progressSection{grid-column:span 3}.saveSection{grid-column:span 4}.itinerarySection{grid-column:span 6}.logSection{grid-column:span 6}.gameSection .btn,.saveSection .btn{min-height:40px}.bottomDeck .section{box-shadow:0 8px 22px #0003}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:100;padding:16px}.modal.open{display:flex}.dialog{width:min(940px,96vw);max-height:92vh;overflow:auto;background:#111a31;border:1px solid #3a4b72;border-radius:18px;padding:18px}.dialog h2{margin-top:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px;color:#dce6fa}input,select,textarea{width:100%;border-radius:10px;border:1px solid #3c4d71;background:#0d1529;color:#fff;padding:9px}textarea{min-height:150px;resize:vertical}
+.notice{position:absolute;left:50%;top:43%;transform:translate(-50%,-50%) scale(.92);z-index:50;opacity:0;pointer-events:none;background:#07111df2;color:#fff;border:2px solid #fff6;border-radius:24px;padding:18px 28px;text-align:center;box-shadow:0 20px 60px #0008;transition:.25s}.notice.show{opacity:1;transform:translate(-50%,-50%) scale(1)}.notice .small{color:#cbd5e1;font-size:14px}.notice .big{font-size:clamp(28px,4vw,58px);font-weight:1000}
+.mapInfo{position:absolute;right:13px;bottom:13px;z-index:28;background:#ffffffdf;color:#17223d;border-radius:11px;padding:7px 9px;font-size:10px;max-width:45%}
+.loading{position:absolute;inset:0;z-index:80;background:#07111df5;display:flex;align-items:center;justify-content:center;text-align:center}.loading.hidden{display:none}.loadingBox{width:min(620px,90%);padding:24px;border:1px solid #ffffff36;border-radius:20px;background:#121d35}.loadingTitle{font-size:25px;font-weight:1000}.loadingText{font-size:13px;color:#cbd5e1;margin-top:8px;line-height:1.6}.bar{height:10px;background:#263452;border-radius:99px;overflow:hidden;margin-top:14px}.bar>div{height:100%;background:#ffd54a;width:8%;transition:width .25s}
+.lineList{display:grid;grid-template-columns:1fr 1fr;gap:6px}.lineChip{display:flex;gap:8px;align-items:center;padding:7px 8px;border-radius:10px;background:#0e172b;font-size:12px}.swatch{width:20px;height:7px;border-radius:4px;flex:0 0 auto}.tiny{font-size:11px;color:#aebbd3}.error{color:#fecaca;background:#4b1720;border:1px solid #8f2e3d;border-radius:10px;padding:10px}.specialRouteInfo{margin-top:10px;padding:11px 12px;border-radius:12px;background:#0d1529;border:1px solid #31436a;color:#dbe5f8;line-height:1.55;font-size:13px}.specialRouteInfo strong{color:#fff}.specialRoutePath{margin-top:5px;color:#aebbd3;font-size:11px;max-height:82px;overflow:auto;word-break:break-word}
+.diceReveal{position:absolute;inset:0;z-index:74;display:none;align-items:center;justify-content:center;background:#07111dc7;backdrop-filter:blur(5px);pointer-events:none}.diceReveal.show{display:flex}.diceRevealBox{min-width:min(430px,80%);padding:24px 34px;border-radius:28px;background:#0b1429ed;border:2px solid #ffffff70;text-align:center;box-shadow:0 22px 70px #0009}.diceRevealLabel{font-size:clamp(18px,2vw,28px);font-weight:900;color:#e7eefc}.diceFace{font-size:clamp(86px,11vw,150px);line-height:1;font-weight:1000;color:#ffd54a;margin:8px 0;text-shadow:0 7px 24px #0008}.diceFace.rolling{animation:dicePulse .18s ease-in-out infinite alternate}.diceRevealText{font-size:clamp(17px,2.2vw,31px);font-weight:1000}.diceRevealSub{margin-top:6px;color:#b9c6dc;font-size:13px}@keyframes dicePulse{from{transform:scale(.88) rotate(-4deg)}to{transform:scale(1.08) rotate(4deg)}}
+.branchDialog{width:min(760px,96vw);overflow:visible}.branchTitleStation{font-size:clamp(28px,4vw,48px);font-weight:1000;text-align:center;margin:5px 0 3px}.branchLead{text-align:center;color:#c8d4e8;margin-bottom:14px}.branchModeGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.branchModeBtn{min-height:112px;border:1px solid #40557e;border-radius:18px;background:#182540;color:#fff;padding:16px;text-align:left;font-weight:900}.branchModeBtn strong{display:block;font-size:22px;margin-bottom:7px}.branchModeBtn span{font-size:12px;color:#b9c6dc;font-weight:650}.branchModeBtn.primaryChoice{background:#5d4a0b;border-color:#d9b52d}.branchOptions{display:grid;gap:8px;margin-top:12px;max-height:52vh;overflow:auto}.branchOption{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;width:100%;border:1px solid #34496f;border-radius:14px;background:#101b32;color:#fff;padding:11px 12px;text-align:left}.branchOption:hover{background:#172744}.branchOption .routeBar{width:8px;height:38px;border-radius:99px}.branchOption .dest{font-size:18px;font-weight:950}.branchOption .routeName{font-size:12px;color:#b9c6dc;margin-top:2px}.branchTag{font-size:10px;padding:4px 7px;border-radius:99px;background:#273653;color:#d9e5fa;white-space:nowrap}.branchTag.fresh{background:#124f3f;color:#caffec}.branchTag.recent{background:#684c12;color:#fff3c2}.branchDiceStage{text-align:center;padding:18px 8px}.branchDiceNumber{font-size:82px;font-weight:1000;color:#ffd54a;line-height:1.05}.branchDiceNumber.rolling{animation:dicePulse .18s ease-in-out infinite alternate}.branchDiceChosen{font-size:21px;font-weight:950;margin-top:8px}.branchBack{margin-top:10px}
+@media (max-width:1200px){.gameSection{grid-column:span 7}.progressSection{grid-column:span 5}.saveSection{grid-column:span 12}.itinerarySection,.logSection{grid-column:span 6}}
+@media (max-width:760px){.app{padding:7px}.side{grid-template-columns:1fr}.gameSection,.progressSection,.saveSection,.itinerarySection,.logSection,.routeNote{grid-column:1}.grid2,.lineList,.branchModeGrid{grid-template-columns:1fr}.searchBox{min-width:100%}.branchDialog{overflow:auto}.stage{border-radius:12px}.hud{left:8px;right:8px;top:8px}.hudCard{padding:6px 8px}.bottomAction{bottom:10px}.mapInfo{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="layout">
+    <div class="stageWrap">
+      <div class="stage" id="stage">
+        <div class="mapViewport" id="mapViewport"><div id="mapScene"><svg id="mapSvg" viewBox="0 0 3600 2000"></svg><div class="token" id="token" title="現在地"></div></div></div>
+        <div class="hud">
+          <div class="hudCard currentHud"><div class="hudLabel">現在地</div><div class="hudBig" id="currentStation">読み込み中</div><div class="hudSub" id="currentLine">—</div></div>
+          <div class="hudCard progress grow"><div class="hudTitleRow"><div class="hudLabel">今回の移動</div><button type="button" class="moveHistoryToggle" id="moveHistoryToggle" aria-expanded="false" aria-controls="moveHistoryPanel" title="移動履歴を表示">＋</button></div><div class="hudBig" id="moveHeadline">路線データを読み込み中</div><div class="hudSub" id="moveDetail">愛知・滋賀・京都・大阪の全駅を準備しています</div><div class="moveHistoryPanel" id="moveHistoryPanel"><div class="moveHistoryTitle">移動履歴</div><div class="moveHistoryContent" id="moveHistoryContent">まだ移動していません</div></div></div>
+        </div>
+        <div class="bottomAction"><button class="diceBtn" id="rollDice" disabled>🎲 ダイスを振る</button><div class="dieResult" id="dieResult">—</div></div>
+        <div class="mapInfo" id="mapInfo">対象: 愛知・滋賀・京都・大阪 + 名古屋〜滋賀接続用の岐阜区間</div>
+        <div class="notice" id="notice"><div class="small" id="noticeSmall">AREA</div><div class="big" id="noticeBig">到着！</div></div>
+        <div class="diceReveal" id="diceReveal" aria-live="assertive"><div class="diceRevealBox"><div class="diceRevealLabel">🎲 通常ダイス</div><div class="diceFace" id="diceRevealFace">1</div><div class="diceRevealText" id="diceRevealText">ダイスを振っています…</div><div class="diceRevealSub">出目を3秒表示してから移動します</div></div></div>
+        <div class="loading" id="loading"><div class="loadingBox"><div class="loadingTitle">🚉 鉄道ネットワークを構築中</div><div class="loadingText" id="loadingText">最新データを読み込んでいます…</div><div class="bar"><div id="loadingBar"></div></div><div id="loadingError" style="margin-top:12px"></div></div></div>
+      </div>
+    </div>
+
+    <div class="topbar" aria-label="地図メニュー">
+      <div class="brand">🚃 名古屋→大阪 鉄道すごろく</div>
+      <div class="badge">v0.13 / Map最上部・メニュー下部版</div>
+      <div class="badge good" id="dataBadge">データ準備中</div>
+      <div class="spacer"></div>
+      <div class="searchBox"><input id="stationSearch" list="stationCandidates" placeholder="駅名でジャンプ"><datalist id="stationCandidates"></datalist><button class="btn" id="stationJump">移動</button></div>
+      <button class="btn ghost" id="zoomOut">−</button><button class="btn ghost" id="zoomFit">全体</button><button class="btn ghost" id="zoomIn">＋</button>
+      <button class="btn" id="openLines">路線一覧</button><button class="btn" id="openResult">リザルト</button><button class="btn" id="openSettings">設定</button>
+    </div>
+
+    <aside class="side bottomDeck" aria-label="ゲーム詳細と操作パネル">
+      <div class="section gameSection"><h3>🎮 ゲーム操作</h3><div class="row"><button class="btn primary" id="branchDice" disabled title="分岐駅に着くと自動で選択画面が出ます">分岐は到着時に選択</button><button class="btn red" id="returnDice" disabled>リターンダイス</button><button class="btn special" id="specialMove" disabled>🎯 特別指定</button><button class="btn" id="undoBtn" disabled>↶ 一手戻す</button><button class="btn" id="manualMove" disabled>現在地修正</button><button class="btn green" id="missionBtn" disabled>ミッション抽選</button></div></div>
+      <div class="section progressSection"><h3>📊 進捗</h3><div class="stat"><span>ターン</span><strong id="turnCount">0</strong></div><div class="stat"><span>移動した駅数</span><strong id="stationCount">0</strong></div><div class="stat"><span>決定ミッション</span><strong id="missionCount">0</strong></div><div class="stat"><span>収録駅 / 路線</span><strong id="networkCount">—</strong></div><div class="stat"><span>交通費</span><strong id="fareTotal">次工程</strong></div></div>
+      <div class="section saveSection"><h3>💾 セーブ / ロード</h3><div class="row"><button class="btn green" id="saveBtn">ブラウザ保存</button><button class="btn" id="loadBtn">続きから</button><button class="btn" id="exportBtn">書き出し</button><label class="btn" style="margin:0">読み込み<input id="importFile" type="file" accept=".json" hidden></label></div></div>
+      <div class="section itinerarySection"><h3>🧳 旅程リスト</h3><div class="itinerary" id="itinerary"></div></div>
+      <div class="section logSection"><h3>🧾 履歴ログ</h3><div class="log" id="log"></div></div>
+      <div class="routeNote">駅・路線データは <b>station_database v20260831</b> をオンライン取得して構築します。地図はページ最上部に横幅いっぱいの16:9で表示し、検索・ズーム・路線一覧・リザルト・設定のメニューは地図直下に配置しています。ダイスの1マスは必ず隣接する1駅として処理し、各駅を順番にアニメーションします。分岐駅では「自由選択」か「分岐ダイス」をその場で選べます。分岐ダイスは直近に通った駅・同じ区間を強く避け、同じ場所をぐるぐる回りにくいループ防止を入れています。通常ダイスは出目を3秒間大きく表示してから移動します。「今回の移動」の＋/−ボタンで、そのダイス中の駅移動履歴を表示・非表示できます。「特別指定」では目的駅までの最短駅数ルートを自動計算し、途中の分岐画面を出さずに1駅ずつ進みます。新幹線は路線図には表示しますが、初期設定ではダイス移動・特別指定ルートから除外しています。運賃計算はまだ正式実装前です。</div>
+    </aside>
+  </div>
+</div>
+
+<div class="modal" id="branchModal"><div class="dialog branchDialog"><h2 style="text-align:center;margin-bottom:4px">🚉 分岐が発生しました</h2><div class="branchTitleStation" id="branchStationName">—</div><div class="branchLead" id="branchLead">この先の進み方を選んでください</div><div id="branchModePanel"><div class="branchModeGrid"><button class="branchModeBtn primaryChoice" id="branchFreeBtn"><strong>👆 自由選択</strong><span>進みたい路線・次の駅を自分で選びます。</span></button><button class="branchModeBtn" id="branchDiceBtnModal"><strong>🎲 分岐ダイス</strong><span>候補の中からダイスで進行方向を決めます。ループしにくい方向を優先します。</span></button></div></div><div id="branchFreePanel" style="display:none"><div class="row"><button class="btn ghost branchBack" id="branchBackFromFree">← 選び方に戻る</button></div><div class="branchOptions" id="branchOptions"></div></div><div id="branchDicePanel" style="display:none"><div class="branchDiceStage"><div class="tiny">分岐ダイス</div><div class="branchDiceNumber" id="branchDiceNumber">—</div><div class="branchDiceChosen" id="branchDiceChosen">抽選中…</div></div></div></div></div>
+
+<div class="modal" id="settingsModal"><div class="dialog"><div class="row"><h2 style="margin-right:auto">⚙️ 設定</h2><button class="btn" data-close="settingsModal">閉じる</button></div><div class="grid2"><div><label>通常ダイスの最大値</label><input id="diceSides" type="number" min="1" max="20" value="6"><label>リターンダイスの最大値</label><input id="returnSides" type="number" min="1" max="20" value="3"><label>移動速度（1駅あたり ms）</label><input id="moveSpeed" type="number" min="250" max="2500" step="50" value="800"><label>到着・地域演出時間（ms）</label><input id="noticeTime" type="number" min="500" max="6000" step="100" value="1600"><label>追従ズーム</label><select id="followZoom"><option value="1.55">広め</option><option value="2.05" selected>標準</option><option value="2.7">近い</option></select><label><input id="areaNotice" type="checkbox" checked style="width:auto"> 都道府県・市区町村の移動演出</label><label><input id="showAllLabels" type="checkbox" style="width:auto"> 全駅名を表示候補にする（重なりは自動で間引く）</label><label><input id="allowShinkansen" type="checkbox" style="width:auto"> 新幹線をダイス移動に含める</label><div class="tiny" style="margin-top:4px;color:#aab4cc">OFFなら新幹線は路線図には表示しますが、通常のダイス移動では使いません。</div></div><div><label>コマ画像</label><input id="tokenImage" type="file" accept="image/*"><label>ミッション一覧（1行 = 1候補）</label><textarea id="missionsText">ご当地グルメを1品食べる
+駅前で記念写真を撮る
+地元の人におすすめを聞く
+名物のお土産を1つ買う
+駅から徒歩15分以内の観光地へ行く
+その街で30分自由行動する
+ご当地ドリンクを探す
+視聴者アンケートで次の行動を決める</textarea><label>メモ帳(.txt)からミッションを読み込む</label><input id="missionFile" type="file" accept=".txt,text/plain"></div></div><div class="row" style="margin-top:12px"><button class="btn primary" id="applySettings">設定を適用</button></div></div></div>
+
+<div class="modal" id="missionModal"><div class="dialog" style="max-width:650px"><div class="row"><h2 style="margin-right:auto">🎯 ミッション</h2><button class="btn" data-close="missionModal">閉じる</button></div><div class="section" style="font-size:25px;font-weight:900;text-align:center" id="missionResult">抽選待ち</div><div class="row"><button class="btn primary" id="drawMission">抽選する</button><button class="btn green" id="confirmMission">この内容で確定</button></div></div></div>
+
+<div class="modal" id="manualModal"><div class="dialog" style="max-width:650px"><div class="row"><h2 style="margin-right:auto">📍 現在地を修正</h2><button class="btn" data-close="manualModal">閉じる</button></div><label>駅名検索</label><input id="manualSearch" placeholder="例: 京都"><label>駅</label><select id="manualStation" size="12" style="height:320px"></select><div class="row" style="margin-top:12px"><button class="btn primary" id="applyManual">移動する</button></div></div></div>
+
+<div class="modal" id="specialModal"><div class="dialog" style="max-width:720px"><div class="row"><h2 style="margin-right:auto">🎯 特別指定</h2><button class="btn" data-close="specialModal">閉じる</button></div><div class="tiny">行き先を指定すると、分岐選択を出さずに駅数が最少になるルートを自動計算して1駅ずつ移動します。新幹線を使うかどうかは設定に従います。</div><label>行き先を検索</label><input id="specialSearch" placeholder="例: 大阪 / 京都 / 草津"><label>行き先</label><select id="specialStation" size="12" style="height:300px"></select><div class="specialRouteInfo" id="specialRouteInfo">行き先を選択してください</div><div class="row" style="margin-top:12px"><button class="btn special" id="applySpecial" disabled>この駅へ最短ルートで移動</button></div></div></div>
+
+<div class="modal" id="resultModal"><div class="dialog"><div class="row"><h2 style="margin-right:auto">🏁 今回の旅のしおり / リザルト</h2><button class="btn" data-close="resultModal">閉じる</button></div><div class="section" id="resultSummary"></div><textarea id="resultText" style="min-height:300px"></textarea><div class="row"><button class="btn primary" id="copyResult">コピー</button><button class="btn" id="downloadTxt">TXT保存</button></div></div></div>
+
+<div class="modal" id="linesModal"><div class="dialog"><div class="row"><h2 style="margin-right:auto">🗺️ 収録路線一覧</h2><button class="btn" data-close="linesModal">閉じる</button></div><div class="section"><div id="lineSummary">読み込み中</div></div><input id="lineFilter" placeholder="路線名で絞り込み"><div class="lineList" id="lineList" style="margin-top:10px"></div></div></div>
+
+<script>
+const DATA_VERSION="v20260831";
+const RAW_BASE=`https://raw.githubusercontent.com/Seo-4d696b75/station_database/${DATA_VERSION}/out/main`;
+const CDN_BASE=`https://cdn.jsdelivr.net/gh/Seo-4d696b75/station_database@${DATA_VERSION}/out/main`;
+const TARGET_PREFS=new Set([23,25,26,27]); // 愛知・滋賀・京都・大阪
+const GIFU_CONNECTOR_LINES=new Set([1002,11502,11503]); // 新幹線 + 東海道本線
+const PREF_NAME={21:"岐阜県",23:"愛知県",25:"滋賀県",26:"京都府",27:"大阪府"};
+const MAP_W=3600,MAP_H=2000;
+const MAJOR_NAMES=new Set(["名古屋","金山(愛知)","豊橋","岡崎","刈谷","大曽根","栄(愛知)","藤が丘(愛知)","米原","彦根","近江八幡","草津(滋賀)","大津","山科","京都","二条","四条","烏丸","出町柳","大阪","新大阪","梅田","大阪梅田(阪急)","大阪梅田(阪神)","京橋(大阪)","天王寺","大阪難波","なんば","心斎橋","本町","淀屋橋","鶴橋","新今宮","堺","関西空港"]);
+const $=s=>document.querySelector(s);
+let stations={},lines={},edges=[],graph={},selectedLineCodes=[],networkReady=false;
+let bounds={minLng:135,maxLng:138,minLat:34,maxLat:36};
+let view={scale:.25,x:0,y:0};
+let isMoving=false,isRolling=false,pendingMission=null,drag=null;
+let state={current:null,previous:null,activeLine:null,pathHistory:[],currentMovePath:[],travelTrail:[],stationVisitCounts:{},edgeVisitCounts:{},actionHistory:[],itinerary:[],logs:[],turns:0,movedStations:0,lastRoll:null,settings:{diceSides:6,returnSides:3,moveSpeed:800,noticeTime:1600,followZoom:2.05,areaNotice:true,showAllLabels:false,allowShinkansen:false,showMoveHistory:false},tokenImage:null,dataVersion:DATA_VERSION};
+
+function setLoading(text,pct){$("#loadingText").textContent=text;$("#loadingBar").style.width=Math.max(5,Math.min(100,pct))+"%"}
+async function fetchJson(path){
+  let lastErr;
+  for(const base of [RAW_BASE,CDN_BASE]){
+    try{const r=await fetch(`${base}/${path}`,{cache:"force-cache"});if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json()}catch(e){lastErr=e}
+  }
+  throw lastErr||new Error("データ取得に失敗しました");
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function rand(n){return 1+Math.floor(Math.random()*n)}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function prefectureName(code){return PREF_NAME[code]||`都道府県${code}`}
+function cityFromAddress(addr=""){
+  let s=addr.replace(/^(愛知県|滋賀県|京都府|大阪府|岐阜県)/,"");
+  const m=s.match(/^(.+?市)/);if(m)return m[1];
+  const m2=s.match(/^(.+?郡.+?[町村])/);if(m2)return m2[1];
+  const m3=s.match(/^(.+?[町村])/);return m3?m3[1]:"";
+}
+function stationDisplayName(s){return s.original_name||s.name}
+function lineColor(line){return (line&&line.color)||"#64748b"}
+function geoDist(a,b){const dx=(a.lng-b.lng)*Math.cos(((a.lat+b.lat)/2)*Math.PI/180),dy=a.lat-b.lat;return Math.hypot(dx,dy)}
+function distanceToOsaka(s){const goal={lat:34.7025,lng:135.4959};return geoDist(s,goal)}
+
+async function loadRailData(){
+  try{
+    setLoading("路線一覧を読み込み中…",8);
+    const [lineData,stationData]=await Promise.all([fetchJson("line.json"),fetchJson("station.json")]);
+    const lineMap=new Map(lineData.filter(l=>!l.closed).map(l=>[l.code,l]));
+    setLoading("愛知・滋賀・京都・大阪の全駅を抽出中…",25);
+    const chosen=stationData.filter(s=>{
+      if(s.closed)return false;
+      if(TARGET_PREFS.has(s.prefecture))return true;
+      if(s.prefecture===21 && (s.lines||[]).some(c=>GIFU_CONNECTOR_LINES.has(c)))return true;
+      return false;
+    });
+    for(const s of chosen){
+      stations[s.code]={...s,display:stationDisplayName(s),city:cityFromAddress(s.address||""),x:0,y:0};
+    }
+    const stationCodes=new Set(Object.keys(stations).map(Number));
+    const lineCounts=new Map();
+    for(const s of chosen)for(const c of s.lines||[])if(lineMap.has(c))lineCounts.set(c,(lineCounts.get(c)||0)+1);
+    selectedLineCodes=[...lineCounts.entries()].filter(([,n])=>n>=2).map(([c])=>c);
+    for(const c of selectedLineCodes)lines[c]=lineMap.get(c);
+    setLoading(`${chosen.length}駅 / ${selectedLineCodes.length}路線を検出。接続関係を構築中…`,38);
+    const details=[];const batch=10;
+    for(let i=0;i<selectedLineCodes.length;i+=batch){
+      const chunk=selectedLineCodes.slice(i,i+batch);
+      const part=await Promise.all(chunk.map(async c=>{try{return await fetchJson(`line/${c}.json`)}catch(e){console.warn("line detail failed",c,e);return null}}));
+      details.push(...part.filter(Boolean));
+      setLoading(`接続関係を構築中… ${Math.min(i+batch,selectedLineCodes.length)}/${selectedLineCodes.length}路線`,38+45*Math.min(1,(i+batch)/selectedLineCodes.length));
+    }
+    const edgeKey=new Set();edges=[];
+    for(const d of details){
+      const list=(d.station_list||[]).filter(s=>stationCodes.has(s.code));
+      // 元の駅順を維持しつつ、対象外駅を挟んだ区間は接続しない
+      const original=d.station_list||[];
+      for(let i=0;i<original.length-1;i++){
+        const a=original[i].code,b=original[i+1].code;
+        if(!stationCodes.has(a)||!stationCodes.has(b)||a===b)continue;
+        const key=[Math.min(a,b),Math.max(a,b),d.code].join(":");if(edgeKey.has(key))continue;edgeKey.add(key);
+        edges.push({a,b,line:d.code});
+      }
+      if((d.name||"").includes("大阪環状線") && list.length>2){
+        const a=list[0].code,b=list[list.length-1].code;if(a!==b){const key=[Math.min(a,b),Math.max(a,b),d.code].join(":");if(!edgeKey.has(key)){edgeKey.add(key);edges.push({a,b,line:d.code})}}
+      }
+    }
+    graph={};for(const code of stationCodes)graph[code]=[];
+    for(const e of edges){graph[e.a]?.push({to:e.b,line:e.line});graph[e.b]?.push({to:e.a,line:e.line})}
+    // 孤立駅は表示対象として残すがゲーム移動候補からは外れる
+    projectStations();
+    let start=chosen.find(s=>s.prefecture===23 && stationDisplayName(s)==="名古屋");
+    if(!start)start=chosen.find(s=>s.prefecture===23 && (s.name||"").startsWith("名古屋"));
+    state.current=start?start.code:chosen[0]?.code;
+    state.previous=null;state.activeLine=null;
+    // ループ防止用の移動履歴。開始駅を最初の訪問として記録する。
+    state.travelTrail=state.current?[state.current]:[];
+    state.stationVisitCounts=state.current?{[state.current]:1}:{};
+    state.edgeVisitCounts={};
+    buildStationSearch();drawMap();fillManual();render();
+    networkReady=true;enableControls(true);setLoading("描画を仕上げています…",98);await sleep(220);$("#loading").classList.add("hidden");fitMap();
+    $("#dataBadge").textContent=`${chosen.length}駅 / ${selectedLineCodes.length}路線`;
+    $("#networkCount").textContent=`${chosen.length} / ${selectedLineCodes.length}`;
+    $("#moveHeadline").textContent="名古屋駅からスタート";$("#moveDetail").textContent="全駅ネットワーク版。ダイスを振って旅を始めよう";
+    addLog(`鉄道データ読込完了: ${chosen.length}駅 / ${selectedLineCodes.length}路線 (${DATA_VERSION})`);
+  }catch(e){
+    console.error(e);$("#loadingError").innerHTML=`<div class="error"><b>路線データを取得できませんでした。</b><br>${escapeHtml(e.message)}<br><br>インターネット接続を確認して、このHTMLを再読み込みしてください。</div>`;$("#dataBadge").textContent="データ取得失敗";$("#dataBadge").className="badge warn";
+  }
+}
+function projectStations(){
+  const arr=Object.values(stations);bounds.minLng=Math.min(...arr.map(s=>s.lng));bounds.maxLng=Math.max(...arr.map(s=>s.lng));bounds.minLat=Math.min(...arr.map(s=>s.lat));bounds.maxLat=Math.max(...arr.map(s=>s.lat));
+  const pad=.06,midLat=(bounds.minLat+bounds.maxLat)/2,cos=Math.cos(midLat*Math.PI/180);const minX=(bounds.minLng-pad)*cos,maxX=(bounds.maxLng+pad)*cos,minY=bounds.minLat-pad,maxY=bounds.maxLat+pad;const rangeX=maxX-minX,rangeY=maxY-minY;
+  for(const s of arr){s.x=((s.lng*cos-minX)/rangeX)*MAP_W;s.y=((maxY-s.lat)/rangeY)*MAP_H}
+}
+function buildStationSearch(){
+  const dl=$("#stationCandidates");dl.innerHTML=Object.values(stations).sort((a,b)=>a.display.localeCompare(b.display,"ja")).map(s=>`<option value="${escapeHtml(s.display)}">${escapeHtml(prefectureName(s.prefecture))}</option>`).join("");
+}
+function drawMap(){
+  const svg=$("#mapSvg");svg.innerHTML="";
+  const ns="http://www.w3.org/2000/svg";
+  // 県名ラベル
+  for(const p of [23,25,26,27,21]){
+    const arr=Object.values(stations).filter(s=>s.prefecture===p);if(!arr.length)continue;
+    const x=arr.reduce((a,s)=>a+s.x,0)/arr.length,y=arr.reduce((a,s)=>a+s.y,0)/arr.length;
+    const t=document.createElementNS(ns,"text");t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("text-anchor","middle");t.setAttribute("class","prefLabel");t.textContent=prefectureName(p);svg.appendChild(t);
+  }
+  const rg=document.createElementNS(ns,"g");rg.id="routesLayer";svg.appendChild(rg);
+  for(const e of edges){const A=stations[e.a],B=stations[e.b];if(!A||!B)continue;const ln=lines[e.line];const p=document.createElementNS(ns,"line");p.setAttribute("x1",A.x);p.setAttribute("y1",A.y);p.setAttribute("x2",B.x);p.setAttribute("y2",B.y);p.setAttribute("stroke",lineColor(ln));p.setAttribute("class","route");p.dataset.line=String(e.line);p.appendChild(document.createElementNS(ns,"title")).textContent=ln?.name||e.line;rg.appendChild(p)}
+  const sg=document.createElementNS(ns,"g");sg.id="stationsLayer";svg.appendChild(sg);
+  for(const s of Object.values(stations)){
+    const g=document.createElementNS(ns,"g");g.setAttribute("class","station");g.dataset.id=String(s.code);
+    const major=MAJOR_NAMES.has(s.name)||MAJOR_NAMES.has(s.display)||(s.lines||[]).length>=3||(graph[s.code]?.length||0)>=4;if(major)g.classList.add("major"); // majorはラベル優先度のみに使用。駅マーカー径は全駅共通。
+    const c=document.createElementNS(ns,"circle");c.setAttribute("cx",s.x);c.setAttribute("cy",s.y);c.setAttribute("r",2);
+    const t=document.createElementNS(ns,"text");t.setAttribute("x",s.x+9);t.setAttribute("y",s.y-8);t.setAttribute("class",major?"majorLabel":"minorLabel");t.textContent=s.display;
+    const title=document.createElementNS(ns,"title");title.textContent=`${s.display} / ${prefectureName(s.prefecture)}${s.city?" "+s.city:""}`;
+    g.append(c,t,title);g.addEventListener("dblclick",()=>{manualSetCurrent(s.code,true)});sg.appendChild(g)
+  }
+  updateMapClasses();updateLabelVisibility();
+}
+function updateMapClasses(){
+  document.querySelectorAll(".station").forEach(g=>{const id=+g.dataset.id;g.classList.toggle("current",id===state.current);g.classList.toggle("available",(graph[state.current]||[]).some(e=>e.to===id))});
+  document.querySelectorAll(".route").forEach(r=>r.classList.toggle("selected",state.activeLine!=null && +r.dataset.line===state.activeLine));
+  if(state.current&&stations[state.current]){const s=stations[state.current];$("#token").style.left=s.x+"px";$("#token").style.top=s.y+"px";if(state.tokenImage)$("#token").style.backgroundImage=`url("${state.tokenImage}")`}
+  scheduleLabelLayout();
+}
+// 駅名ラベルは「画面上で一定サイズ」に保ち、ズーム/移動のたびに衝突判定する。
+// 文字が重なる場合は周囲8方向へ逃がし、それでも置けない駅名だけを自動で非表示にする。
+let labelRaf=0;
+function scheduleLabelLayout(){
+  cancelAnimationFrame(labelRaf);
+  labelRaf=requestAnimationFrame(layoutStationLabels);
+}
+function layoutStationLabels(){
+  if(!networkReady && !Object.keys(stations).length)return;
+  const stageRect=$("#stage").getBoundingClientRect();
+  const current=state.current;
+  const visible=[];
+  document.querySelectorAll(".station").forEach(g=>{
+    const id=+g.dataset.id,s=stations[id],t=g.querySelector("text");
+    if(!s||!t)return;
+    const sx=view.x+s.x*view.scale, sy=view.y+s.y*view.scale;
+    const margin=90;
+    if(sx<-margin||sy<-margin||sx>stageRect.width+margin||sy>stageRect.height+margin){t.classList.add("labelHidden");return}
+    const isCurrent=id===current;
+    const isAvailable=(graph[current]||[]).some(e=>e.to===id);
+    const isMajor=g.classList.contains("major");
+    // 広域表示は主要駅中心。ズームするほど全駅を候補に増やす。
+    const allowed=state.settings.showAllLabels||isCurrent||isAvailable||isMajor||view.scale>=0.95;
+    if(!allowed){t.classList.add("labelHidden");return}
+    const priority=(isCurrent?10000:0)+(isAvailable?6000:0)+(isMajor?2500:0)+(s.lines||[]).length*80;
+    visible.push({g,t,s,id,sx,sy,isCurrent,isAvailable,isMajor,priority});
+  });
+  // 重要駅→その他の順で先に場所を確保する。
+  visible.sort((a,b)=>b.priority-a.priority || a.s.display.localeCompare(b.s.display,"ja"));
+  const placed=[];
+  const overlaps=(r)=>placed.some(p=>!(r.r<p.l||r.l>p.r||r.b<p.t||r.t>p.b));
+  const charWidth=(txt)=>[...txt].reduce((n,ch)=>n+(ch.charCodeAt(0)>255?1:0.58),0);
+  for(const o of visible){
+    const fontPx=o.isCurrent?16:o.isMajor?14:13;
+    const strokePx=3.2;
+    const w=Math.min(190,Math.max(30,charWidth(o.s.display)*fontPx+14));
+    const h=fontPx+13;
+    // 候補位置: 右上/右下/左上/左下/右/左/上/下
+    const gap=o.isMajor?9:7;
+    const candidates=[
+      {dx:gap,dy:-gap,anchor:"start"},{dx:gap,dy:gap,anchor:"start"},
+      {dx:-gap,dy:-gap,anchor:"end"},{dx:-gap,dy:gap,anchor:"end"},
+      {dx:gap,dy:0,anchor:"start"},{dx:-gap,dy:0,anchor:"end"},
+      {dx:0,dy:-gap-4,anchor:"middle"},{dx:0,dy:gap+4,anchor:"middle"}
+    ];
+    let selected=null;
+    for(const c of candidates){
+      let l;
+      if(c.anchor==="start")l=o.sx+c.dx;
+      else if(c.anchor==="end")l=o.sx+c.dx-w;
+      else l=o.sx+c.dx-w/2;
+      const ttop=o.sy+c.dy-h/2;
+      const rect={l:l-7,r:l+w+7,t:ttop-5,b:ttop+h+5};
+      // 画面外やHUDの主要領域へ大きくはみ出す位置を避ける。
+      if(rect.r<3||rect.l>stageRect.width-3||rect.b<3||rect.t>stageRect.height-3)continue;
+      if(!overlaps(rect)){selected={...c,rect};break}
+    }
+    // 現在地だけは必ず表示。置き場がなければ最初の位置を採用する。
+    if(!selected && o.isCurrent){
+      const c=candidates[0],l=o.sx+c.dx;
+      selected={...c,rect:{l:l-7,r:l+w+7,t:o.sy+c.dy-h/2-5,b:o.sy+c.dy+h/2+5}};
+    }
+    if(!selected){o.t.classList.add("labelHidden");continue}
+    o.t.classList.remove("labelHidden");
+    // mapSceneの拡大を打ち消し、画面上の文字サイズ/オフセットを一定にする。
+    o.t.style.fontSize=(fontPx/view.scale)+"px";
+    o.t.style.strokeWidth=(strokePx/view.scale)+"px";
+    o.t.setAttribute("text-anchor",selected.anchor);
+    o.t.setAttribute("x",o.s.x+selected.dx/view.scale);
+    o.t.setAttribute("y",o.s.y+selected.dy/view.scale);
+    placed.push(selected.rect);
+  }
+}
+function updateLabelVisibility(){scheduleLabelLayout()}
+function setView(scale,x,y,animate=true){view={scale,x,y};$("#mapScene").style.transition=animate?"transform .5s cubic-bezier(.2,.75,.2,1)":"none";$("#mapScene").style.transform=`translate(${x}px,${y}px) scale(${scale})`;updateLabelVisibility()}
+function fitMap(){const box=$("#stage").getBoundingClientRect(),scale=Math.min(box.width/MAP_W,box.height/MAP_H);setView(scale,(box.width-MAP_W*scale)/2,(box.height-MAP_H*scale)/2,true)}
+function focusStation(id,scale=state.settings.followZoom){const s=stations[id];if(!s)return;const box=$("#stage").getBoundingClientRect();setView(scale,box.width/2-s.x*scale,box.height/2-s.y*scale,true)}
+function movementFocusScale(){return Math.min(4.5,Math.max(.15,(state.settings.followZoom||2.05)*2))}
+function focusStationDuringMove(id){focusStation(id,movementFocusScale())}
+function enableControls(on){["#rollDice","#returnDice","#specialMove","#undoBtn","#manualMove","#missionBtn"].forEach(q=>{const el=$(q);if(el)el.disabled=!on});const bi=$("#branchDice");if(bi)bi.disabled=true}
+
+function addLog(msg){state.logs.unshift(`${new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}　${msg}`);state.logs=state.logs.slice(0,120);render()}
+function ensureMoveHistoryState(){
+  if(!Array.isArray(state.currentMovePath))state.currentMovePath=[];
+  if(!state.settings||typeof state.settings!=="object")state.settings={};
+  if(typeof state.settings.showMoveHistory!=="boolean")state.settings.showMoveHistory=false;
+}
+function updateMoveHistoryPanel(){
+  ensureMoveHistoryState();
+  const panel=$("#moveHistoryPanel"),content=$("#moveHistoryContent"),toggle=$("#moveHistoryToggle");
+  if(!panel||!content||!toggle)return;
+  const ids=state.currentMovePath||[];
+  const names=ids.map(id=>stations[id]?.display).filter(Boolean);
+  content.textContent=names.length>1?names.join(" → "):names.length===1?`${names[0]}（移動開始）`:"まだ移動していません";
+  const open=!!state.settings.showMoveHistory;
+  panel.classList.toggle("show",open);
+  toggle.textContent=open?"−":"＋";
+  toggle.setAttribute("aria-expanded",String(open));
+  toggle.title=open?"移動履歴を非表示":"移動履歴を表示";
+}
+function render(){
+  ensureMoveHistoryState();
+  const s=stations[state.current];$("#currentStation").textContent=s?s.display:"—";$("#currentLine").textContent=state.activeLine&&lines[state.activeLine]?lines[state.activeLine].name:"路線未選択";$("#turnCount").textContent=state.turns;$("#stationCount").textContent=state.movedStations;$("#missionCount").textContent=state.itinerary.filter(x=>x.mission).length;$("#dieResult").textContent=state.lastRoll??"—";
+  $("#log").innerHTML=state.logs.map(x=>`<div>・${escapeHtml(x)}</div>`).join("")||"まだ履歴はありません";
+  $("#itinerary").innerHTML=state.itinerary.length?state.itinerary.map((x,i)=>`<div class="item"><b>${i+1}. ${escapeHtml(x.from)} → ${escapeHtml(x.to)}</b><br>${x.line?`🚃 ${escapeHtml(x.line)}<br>`:""}${x.mission?`🎯 ${escapeHtml(x.mission)}<br>`:""}<span style="color:#aab4cc">移動 ${x.steps}駅</span></div>`).join(""):"まだ旅程はありません";
+  updateMoveHistoryPanel();
+  updateMapClasses();
+}
+$("#moveHistoryToggle").onclick=()=>{ensureMoveHistoryState();state.settings.showMoveHistory=!state.settings.showMoveHistory;updateMoveHistoryPanel()};
+function showNotice(small,big){$("#noticeSmall").textContent=small;$("#noticeBig").textContent=big;$("#notice").classList.add("show");setTimeout(()=>$("#notice").classList.remove("show"),state.settings.noticeTime)}
+function snapshot(){const copy=JSON.parse(JSON.stringify(state));copy.actionHistory=[];return copy}
+function pushUndo(){state.actionHistory.push(snapshot());if(state.actionHistory.length>40)state.actionHistory.shift()}
+function undo(){if(!state.actionHistory.length)return addLog("戻せる操作がありません");const prev=state.actionHistory.pop(),keep=state.actionHistory;state={...prev,actionHistory:keep};addLog("一手戻しました");focusStation(state.current);render()}
+
+function isShinkansenLine(code){const n=lines[code]?.name||"";return n.includes("新幹線")}
+function edgeHistoryKey(a,b,line){
+  const x=Math.min(Number(a),Number(b)),y=Math.max(Number(a),Number(b));
+  return `${x}:${y}:${line}`;
+}
+function ensureLoopState(){
+  if(!Array.isArray(state.travelTrail))state.travelTrail=[];
+  if(!state.stationVisitCounts||typeof state.stationVisitCounts!=="object")state.stationVisitCounts={};
+  if(!state.edgeVisitCounts||typeof state.edgeVisitCounts!=="object")state.edgeVisitCounts={};
+  // 旧セーブから読み込んだ場合は、残っている移動履歴から最低限の履歴を復元する。
+  if(!state.travelTrail.length){
+    const recovered=[...(state.pathHistory||[]),state.current].filter(Boolean);
+    state.travelTrail=recovered.length?recovered:[state.current].filter(Boolean);
+  }
+  if(!Object.keys(state.stationVisitCounts).length){
+    for(const id of state.travelTrail)state.stationVisitCounts[id]=(state.stationVisitCounts[id]||0)+1;
+  }
+}
+function recordTraversal(from,to,line){
+  ensureLoopState();
+  state.travelTrail.push(to);
+  if(state.travelTrail.length>160)state.travelTrail=state.travelTrail.slice(-160);
+  state.stationVisitCounts[to]=(state.stationVisitCounts[to]||0)+1;
+  const key=edgeHistoryKey(from,to,line);
+  state.edgeVisitCounts[key]=(state.edgeVisitCounts[key]||0)+1;
+}
+function recentStationAge(id){
+  ensureLoopState();
+  for(let i=state.travelTrail.length-1;i>=0;i--){
+    if(Number(state.travelTrail[i])===Number(id))return state.travelTrail.length-1-i;
+  }
+  return Infinity;
+}
+function movementEdges(current,previous){
+  let cand=(graph[current]||[]).filter(e=>e.to!==previous);
+  if(!cand.length)cand=graph[current]||[];
+  // すごろくでは原則「普通の駅を1駅ずつ」進む。新幹線は明示的にONにした時だけ候補にする。
+  if(!state.settings.allowShinkansen){
+    const conventional=cand.filter(e=>!isShinkansenLine(e.line));
+    if(conventional.length)cand=conventional;
+  }
+  return cand;
+}
+function candidateEdges(current,previous){return movementEdges(current,previous)}
+function pickEdge(current,previous,forceBranch=false,turnVisited=null){
+  ensureLoopState();
+  let cand=movementEdges(current,previous);if(!cand.length)return null;
+  const turnSet=turnVisited||new Set();
+  const degree=(graph[current]||[]).length;
+
+  // 1回のダイス移動中に同じ駅へ戻る候補は、別の道がある限り除外する。
+  const noTurnLoop=cand.filter(e=>!turnSet.has(e.to));
+  if(noTurnLoop.length)cand=noTurnLoop;
+
+  // 直近10駅以内に通った駅へ戻るのを避ける。特に分岐では新しい方向を最優先。
+  const freshRecent=cand.filter(e=>recentStationAge(e.to)>10);
+  if(freshRecent.length && (degree>=3 || cand.some(e=>recentStationAge(e.to)<=4)))cand=freshRecent;
+
+  // 分岐ダイス時は現在路線とは別の路線を優先。
+  if(forceBranch){
+    const other=cand.filter(e=>e.line!==state.activeLine);
+    if(other.length)cand=other;
+  }else if(state.activeLine){
+    // 通常は同一路線を維持するが、その先が既訪問ばかりで別路線に未訪問駅があるなら自動で脱出する。
+    const same=cand.filter(e=>e.line===state.activeLine);
+    const other=cand.filter(e=>e.line!==state.activeLine);
+    const sameFresh=same.filter(e=>(state.stationVisitCounts[e.to]||0)===0 && (state.edgeVisitCounts[edgeHistoryKey(current,e.to,e.line)]||0)===0);
+    const otherFresh=other.filter(e=>(state.stationVisitCounts[e.to]||0)===0 && (state.edgeVisitCounts[edgeHistoryKey(current,e.to,e.line)]||0)===0);
+    if(sameFresh.length)cand=sameFresh;
+    else if(otherFresh.length)cand=otherFresh;
+    else if(same.length)cand=same;
+  }
+
+  // 候補を「未訪問駅・未使用区間・直近でない・大阪方向」の順で評価する。
+  let bestScore=-Infinity,best=[];
+  for(const e of cand){
+    const visits=state.stationVisitCounts[e.to]||0;
+    const edgeUses=state.edgeVisitCounts[edgeHistoryKey(current,e.to,e.line)]||0;
+    const age=recentStationAge(e.to);
+    let score=0;
+    if(visits===0)score+=6000; else score-=visits*1400;
+    if(edgeUses===0)score+=4500; else score-=edgeUses*2200;
+    if(age===Infinity)score+=1800;
+    else if(age<=3)score-=7000;
+    else if(age<=6)score-=3500;
+    else if(age<=10)score-=1600;
+    if(!forceBranch && state.activeLine && e.line===state.activeLine)score+=500;
+    if(forceBranch && state.activeLine && e.line!==state.activeLine)score+=1400;
+    // 大阪へ近づく方向は最後のタイブレーク程度に効かせる。
+    score-=distanceToOsaka(stations[e.to])*350;
+    if(score>bestScore+0.001){bestScore=score;best=[e]}
+    else if(Math.abs(score-bestScore)<=0.001)best.push(e);
+  }
+  return best[Math.floor(Math.random()*best.length)]||cand[0];
+}
+function uniqueDestinationEdges(edges){
+  const byDest=new Map();
+  for(const e of edges){
+    const key=Number(e.to);
+    if(!byDest.has(key)){byDest.set(key,e);continue}
+    // 同じ次駅へ複数路線が重なる場合は、現在路線を優先して1方向として扱う。
+    const cur=byDest.get(key);
+    if(state.activeLine && e.line===state.activeLine && cur.line!==state.activeLine)byDest.set(key,e);
+  }
+  return [...byDest.values()];
+}
+function branchChoicesAt(current,previous,turnVisited){
+  let cand=movementEdges(current,previous);
+  const turnSet=turnVisited||new Set();
+  const noTurnLoop=cand.filter(e=>!turnSet.has(e.to));
+  if(noTurnLoop.length)cand=noTurnLoop;
+  return uniqueDestinationEdges(cand);
+}
+function branchDicePool(current,choices){
+  ensureLoopState();
+  let pool=[...choices];
+  const pristine=pool.filter(e=>(state.stationVisitCounts[e.to]||0)===0 && (state.edgeVisitCounts[edgeHistoryKey(current,e.to,e.line)]||0)===0);
+  if(pristine.length)return pristine;
+  const notRecent=pool.filter(e=>recentStationAge(e.to)>10);
+  if(notRecent.length)return notRecent;
+  const unusedEdge=pool.filter(e=>(state.edgeVisitCounts[edgeHistoryKey(current,e.to,e.line)]||0)===0);
+  if(unusedEdge.length)return unusedEdge;
+  return pool;
+}
+function branchOptionHtml(e){
+  const dest=stations[e.to];
+  const line=lines[e.line];
+  const visits=state.stationVisitCounts[e.to]||0;
+  const age=recentStationAge(e.to);
+  const fresh=visits===0;
+  const tag=fresh?'<span class="branchTag fresh">未訪問</span>':(age<=10?'<span class="branchTag recent">最近通過</span>':`<span class="branchTag">訪問 ${visits}回</span>`);
+  return `<span class="routeBar" style="background:${escapeHtml(lineColor(line))}"></span><span><span class="dest">→ ${escapeHtml(dest?.display||"不明")}</span><span class="routeName">${escapeHtml(line?.name||"路線不明")}</span></span>${tag}`;
+}
+function chooseBranchEdge(current,previous,turnVisited,step,total){
+  const choices=branchChoicesAt(current,previous,turnVisited);
+  if(choices.length<=1)return Promise.resolve(choices[0]||null);
+  const modal=$("#branchModal"),modePanel=$("#branchModePanel"),freePanel=$("#branchFreePanel"),dicePanel=$("#branchDicePanel");
+  $("#branchStationName").textContent=stations[current]?.display||"分岐駅";
+  $("#branchLead").textContent=`残り ${Math.max(0,total-step)} 駅分 ｜ ${choices.length}方向の分岐があります`;
+  modePanel.style.display="block";freePanel.style.display="none";dicePanel.style.display="none";
+  modal.classList.add("open");
+  return new Promise(resolve=>{
+    let settled=false;
+    const finish=(edge,method)=>{
+      if(settled)return;settled=true;
+      modal.classList.remove("open");
+      if(edge)addLog(`分岐 ${method}: ${stations[current].display} → ${stations[edge.to].display}（${lines[edge.line]?.name||"路線不明"}）`);
+      resolve(edge);
+    };
+    $("#branchFreeBtn").onclick=()=>{
+      modePanel.style.display="none";dicePanel.style.display="none";freePanel.style.display="block";
+      const box=$("#branchOptions");box.innerHTML="";
+      const ordered=[...choices].sort((a,b)=>{
+        const av=state.stationVisitCounts[a.to]||0,bv=state.stationVisitCounts[b.to]||0;
+        if(av!==bv)return av-bv;
+        return distanceToOsaka(stations[a.to])-distanceToOsaka(stations[b.to]);
+      });
+      for(const e of ordered){
+        const b=document.createElement("button");b.type="button";b.className="branchOption";b.innerHTML=branchOptionHtml(e);b.onclick=()=>finish(e,"自由選択");box.appendChild(b);
+      }
+    };
+    $("#branchBackFromFree").onclick=()=>{freePanel.style.display="none";modePanel.style.display="block"};
+    $("#branchDiceBtnModal").onclick=async()=>{
+      modePanel.style.display="none";freePanel.style.display="none";dicePanel.style.display="block";
+      const pool=branchDicePool(current,choices);
+      const finalIndex=Math.floor(Math.random()*pool.length);
+      const finalEdge=pool[finalIndex];
+      const num=$("#branchDiceNumber"),chosen=$("#branchDiceChosen");
+      num.classList.add("rolling");chosen.textContent=`${pool.length}方向から抽選中…`;
+      const timer=setInterval(()=>{num.textContent=String(rand(pool.length))},90);
+      await sleep(900);clearInterval(timer);num.classList.remove("rolling");num.textContent=String(finalIndex+1);
+      chosen.textContent=`→ ${stations[finalEdge.to].display} ｜ ${lines[finalEdge.line]?.name||"路線不明"}`;
+      await sleep(1100);
+      finish(finalEdge,"分岐ダイス");
+    };
+  });
+}
+async function showNormalDiceReveal(result){
+  const overlay=$("#diceReveal"),face=$("#diceRevealFace"),text=$("#diceRevealText");
+  overlay.classList.add("show");face.classList.add("rolling");text.textContent="ダイスを振っています…";
+  const sides=Math.max(1,Number(state.settings.diceSides)||6);
+  const timer=setInterval(()=>{face.textContent=String(rand(sides))},90);
+  await sleep(900);clearInterval(timer);face.classList.remove("rolling");face.textContent=String(result);text.textContent=`${result} が出た！　${result}駅進む`;
+  $("#dieResult").textContent=String(result);
+  await sleep(2100);
+  overlay.classList.remove("show");
+}
+async function rollNormalDice(){
+  if(!networkReady||isMoving||isRolling)return;
+  isRolling=true;enableControls(false);
+  const result=rand(state.settings.diceSides);state.lastRoll=result;
+  try{await showNormalDiceReveal(result);isRolling=false;await doMove(result,"normal")}catch(e){console.error(e);isRolling=false;isMoving=false;enableControls(true)}
+}
+function updateMoveStepHud(step,total,oldStation,newStation,lineCode){
+  const lineName=lines[lineCode]?.name||"路線未選択";
+  $("#currentStation").textContent=newStation.display;
+  $("#currentLine").textContent=lineName;
+  $("#moveHeadline").textContent=`${step} / ${total} 駅目　${newStation.display}`;
+  $("#moveDetail").textContent=`${oldStation.display} → ${newStation.display}　｜　1マス = 1駅`;
+}
+async function doMove(steps,mode="normal"){
+  if(isMoving||!networkReady)return;
+  pushUndo();isMoving=true;enableControls(false);state.lastRoll=steps;state.turns++;
+  const startId=state.current,fromName=stations[startId].display;
+  state.currentMovePath=[state.current];updateMoveHistoryPanel();
+  $("#moveHeadline").textContent=`ダイス ${steps}：${steps}駅進む`;
+  $("#moveDetail").textContent="1駅ずつ移動します";
+  focusStationDuringMove(state.current);
+  let path=[state.current],prev=state.previous,usedLine=state.activeLine;
+  // このダイス1回の中だけでも同じ駅へ戻らないようにする。
+  const turnVisited=new Set([state.current]);
+  await sleep(250);
+  for(let i=0;i<steps;i++){
+    let edge;
+    if(mode==="return"&&state.pathHistory.length){
+      const target=state.pathHistory.pop();
+      edge=(graph[state.current]||[]).find(e=>e.to===target)||pickEdge(state.current,prev,false);
+    }else{
+      const branchChoices=branchChoicesAt(state.current,prev,turnVisited);
+      if(branchChoices.length>1){
+        $("#moveHeadline").textContent=`分岐：${stations[state.current].display}`;
+        $("#moveDetail").textContent="自由選択か分岐ダイスを選んでください";
+        edge=await chooseBranchEdge(state.current,prev,turnVisited,i,steps);
+      }else{
+        edge=branchChoices[0]||pickEdge(state.current,prev,false,turnVisited);
+      }
+    }
+    if(!edge)break;
+    const old=stations[state.current];
+    if(mode!=="return")state.pathHistory.push(state.current);
+    const fromId=state.current;
+    prev=state.current;state.previous=state.current;state.current=edge.to;state.activeLine=edge.line;usedLine=edge.line;state.movedStations++;path.push(state.current);
+    state.currentMovePath=[...path];updateMoveHistoryPanel();
+    turnVisited.add(state.current);
+    recordTraversal(fromId,state.current,edge.line);
+    const now=stations[state.current];
+    updateMapClasses();focusStationDuringMove(state.current);updateMoveStepHud(i+1,steps,old,now,edge.line);
+    if(state.settings.areaNotice){
+      if(old.prefecture!==now.prefecture)showNotice("PREFECTURE",`${prefectureName(now.prefecture)}に入りました！`);
+      else if(old.city&&now.city&&old.city!==now.city)showNotice("CITY",`${now.city}に入りました！`);
+    }
+    // 1駅分の移動が画面上で確認できてから次の駅へ進む。
+    await sleep(Math.max(350,state.settings.moveSpeed));
+  }
+  const toName=stations[state.current].display,lineName=usedLine&&lines[usedLine]?lines[usedLine].name:"";
+  state.itinerary.push({from:fromName,to:toName,path:path.map(id=>stations[id].display),line:lineName,steps:Math.max(0,path.length-1),mission:null,time:new Date().toISOString()});
+  $("#moveHeadline").textContent=`${toName} に到着！`;
+  $("#moveDetail").textContent=`${fromName} → ${path.slice(1).map(id=>stations[id].display).join(" → ")}`;
+  addLog(`${mode==="return"?"リターン":"移動"}: ${path.map(id=>stations[id].display).join(" → ")}（${Math.max(0,path.length-1)}駅）`);
+  isMoving=false;enableControls(true);render();showNotice("ARRIVAL",`${toName} 到着！`);
+}
+$("#rollDice").onclick=()=>{if(!networkReady){$("#moveHeadline").textContent="路線データ準備中";$("#moveDetail").textContent="読み込み完了後にダイスを振れます";return}rollNormalDice()};$("#returnDice").onclick=()=>doMove(rand(state.settings.returnSides),"return");$("#undoBtn").onclick=undo;
+
+function specialRouteEdges(current){
+  let cand=graph[current]||[];
+  if(!state.settings.allowShinkansen)cand=cand.filter(e=>!isShinkansenLine(e.line));
+  return cand;
+}
+function findShortestRoute(start,target){
+  start=Number(start);target=Number(target);
+  if(!stations[start]||!stations[target])return null;
+  if(start===target)return {stations:[start],edges:[]};
+  const queue=[start],seen=new Set([start]),prev=new Map();
+  let head=0;
+  while(head<queue.length){
+    const cur=queue[head++];
+    let next=[...specialRouteEdges(cur)];
+    // 同じ駅数なら現在路線を維持する候補を先に探索し、乗換を少し自然にする。
+    next.sort((a,b)=>((b.line===state.activeLine)-(a.line===state.activeLine)) || distanceToOsaka(stations[a.to])-distanceToOsaka(stations[b.to]));
+    for(const e of next){
+      const to=Number(e.to);if(seen.has(to))continue;
+      seen.add(to);prev.set(to,{from:cur,line:e.line});
+      if(to===target){head=queue.length;queue.length=0;break}
+      queue.push(to);
+    }
+  }
+  if(!prev.has(target))return null;
+  const stationPath=[target],edgePath=[];
+  let cur=target;
+  while(cur!==start){
+    const p=prev.get(cur);if(!p)return null;
+    edgePath.push({from:p.from,to:cur,line:p.line});stationPath.push(p.from);cur=p.from;
+  }
+  stationPath.reverse();edgePath.reverse();
+  return {stations:stationPath,edges:edgePath};
+}
+function routeLineSummary(route){
+  if(!route||!route.edges.length)return "";
+  const names=[];
+  for(const e of route.edges){const n=lines[e.line]?.name||"路線不明";if(names[names.length-1]!==n)names.push(n)}
+  return names.join(" → ");
+}
+function fillSpecial(q=""){
+  const list=filterStations(q).filter(s=>s.code!==state.current);
+  const sel=$("#specialStation");
+  sel.innerHTML=list.map(s=>`<option value="${s.code}">${escapeHtml(s.display)} — ${escapeHtml(prefectureName(s.prefecture))}</option>`).join("");
+  if(list.length)sel.value=String(list[0].code);
+  updateSpecialPreview();
+}
+function updateSpecialPreview(){
+  const target=Number($("#specialStation")?.value),info=$("#specialRouteInfo"),btn=$("#applySpecial");
+  if(!info||!btn)return;
+  if(!target||!stations[target]){info.textContent="行き先を選択してください";btn.disabled=true;return}
+  const route=findShortestRoute(state.current,target);
+  if(!route){info.innerHTML=`<strong>${escapeHtml(stations[target].display)}</strong> へ移動できるルートが見つかりません。<div class="specialRoutePath">新幹線設定を変更すると経路が見つかる場合があります。</div>`;btn.disabled=true;return}
+  const count=route.edges.length,lineSummary=routeLineSummary(route);
+  const names=route.stations.map(id=>stations[id]?.display).filter(Boolean);
+  info.innerHTML=`<strong>${escapeHtml(stations[state.current]?.display||"現在地")} → ${escapeHtml(stations[target].display)}</strong><br>最短 ${count}駅${lineSummary?` ｜ ${escapeHtml(lineSummary)}`:""}<div class="specialRoutePath">${names.map(escapeHtml).join(" → ")}</div>`;
+  btn.disabled=count===0;
+}
+async function doSpecialMove(target){
+  if(isMoving||isRolling||!networkReady)return;
+  const route=findShortestRoute(state.current,target);
+  if(!route||!route.edges.length){updateSpecialPreview();return}
+  pushUndo();isMoving=true;enableControls(false);closeModal("specialModal");state.turns++;
+  const startId=state.current,fromName=stations[startId].display,toName=stations[target].display;
+  const lineSummary=routeLineSummary(route),total=route.edges.length;
+  state.currentMovePath=[state.current];updateMoveHistoryPanel();
+  $("#moveHeadline").textContent=`特別指定：${toName}へ移動`;
+  $("#moveDetail").textContent=`最短 ${total}駅 ｜ 分岐は自動選択`;
+  focusStationDuringMove(state.current);
+  await sleep(250);
+  for(let i=0;i<route.edges.length;i++){
+    const edge=route.edges[i];
+    // 途中で状態が変わっても、事前計算した最短ルートの次駅へ進む。
+    if(Number(state.current)!==Number(edge.from))break;
+    const old=stations[state.current],fromId=state.current;
+    state.pathHistory.push(state.current);
+    state.previous=state.current;state.current=edge.to;state.activeLine=edge.line;state.movedStations++;
+    state.currentMovePath.push(state.current);updateMoveHistoryPanel();recordTraversal(fromId,state.current,edge.line);
+    const now=stations[state.current];updateMapClasses();focusStationDuringMove(state.current);
+    $("#currentStation").textContent=now.display;$("#currentLine").textContent=lines[edge.line]?.name||"路線未選択";
+    $("#moveHeadline").textContent=`特別指定 ${i+1} / ${total}駅目　${now.display}`;
+    $("#moveDetail").textContent=`${old.display} → ${now.display} ｜ ${toName}まで最短ルート`;
+    if(state.settings.areaNotice){
+      if(old.prefecture!==now.prefecture)showNotice("PREFECTURE",`${prefectureName(now.prefecture)}に入りました！`);
+      else if(old.city&&now.city&&old.city!==now.city)showNotice("CITY",`${now.city}に入りました！`);
+    }
+    await sleep(Math.max(350,state.settings.moveSpeed));
+  }
+  const actualTo=stations[state.current].display;
+  const names=(state.currentMovePath||[]).map(id=>stations[id]?.display).filter(Boolean);
+  state.itinerary.push({from:fromName,to:actualTo,path:names,line:lineSummary,steps:Math.max(0,names.length-1),mission:null,time:new Date().toISOString(),special:true});
+  $("#moveHeadline").textContent=`${actualTo} に到着！`;
+  $("#moveDetail").textContent=`特別指定 ｜ ${fromName} → ${actualTo} ｜ 最短 ${Math.max(0,names.length-1)}駅`;
+  addLog(`特別指定: ${fromName} → ${actualTo}（最短 ${Math.max(0,names.length-1)}駅）`);
+  isMoving=false;enableControls(true);render();showNotice("SPECIAL",`${actualTo} 到着！`);
+}
+$("#specialMove").onclick=()=>{if(!networkReady||isMoving||isRolling)return;$("#specialSearch").value="";fillSpecial();openModal("specialModal")};
+$("#specialSearch").oninput=e=>fillSpecial(e.target.value);
+$("#specialStation").onchange=updateSpecialPreview;
+$("#applySpecial").onclick=()=>{const target=Number($("#specialStation").value);if(target)doSpecialMove(target)};
+
+function missionList(){return $("#missionsText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}
+function openModal(id){$("#"+id).classList.add("open")}function closeModal(id){$("#"+id).classList.remove("open")}document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
+$("#missionBtn").onclick=()=>openModal("missionModal");$("#drawMission").onclick=()=>{const list=missionList();pendingMission=list.length?list[Math.floor(Math.random()*list.length)]:"候補がありません";$("#missionResult").textContent=pendingMission};$("#confirmMission").onclick=()=>{if(!pendingMission)return;pushUndo();if(!state.itinerary.length)state.itinerary.push({from:stations[state.current].display,to:stations[state.current].display,path:[stations[state.current].display],line:"",steps:0,mission:null,time:new Date().toISOString()});state.itinerary[state.itinerary.length-1].mission=pendingMission;addLog(`ミッション確定: ${pendingMission}`);closeModal("missionModal");pendingMission=null;render()};
+
+$("#openSettings").onclick=()=>{$("#diceSides").value=state.settings.diceSides;$("#returnSides").value=state.settings.returnSides;$("#moveSpeed").value=state.settings.moveSpeed;$("#noticeTime").value=state.settings.noticeTime;$("#followZoom").value=String(state.settings.followZoom);$("#areaNotice").checked=state.settings.areaNotice;$("#showAllLabels").checked=state.settings.showAllLabels;$("#allowShinkansen").checked=!!state.settings.allowShinkansen;openModal("settingsModal")};
+$("#applySettings").onclick=()=>{const keepMoveHistory=!!state.settings.showMoveHistory;state.settings={diceSides:+$("#diceSides").value||6,returnSides:+$("#returnSides").value||3,moveSpeed:+$("#moveSpeed").value||800,noticeTime:+$("#noticeTime").value||1600,followZoom:+$("#followZoom").value||2.05,areaNotice:$("#areaNotice").checked,showAllLabels:$("#showAllLabels").checked,allowShinkansen:$("#allowShinkansen").checked,showMoveHistory:keepMoveHistory};updateLabelVisibility();addLog(`設定を更新しました（新幹線移動: ${state.settings.allowShinkansen?"ON":"OFF"}）`);closeModal("settingsModal")};
+$("#missionFile").onchange=async e=>{const f=e.target.files[0];if(f)$("#missionsText").value=await f.text()};$("#tokenImage").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{state.tokenImage=r.result;render()};r.readAsDataURL(f)};
+
+function filterStations(q=""){q=q.trim();return Object.values(stations).filter(s=>!q||s.display.includes(q)||s.name.includes(q)).sort((a,b)=>a.display.localeCompare(b.display,"ja"))}
+function fillManual(q=""){const list=filterStations(q);$("#manualStation").innerHTML=list.map(s=>`<option value="${s.code}">${escapeHtml(s.display)} — ${escapeHtml(prefectureName(s.prefecture))}</option>`).join("");if(list.some(s=>s.code===state.current))$("#manualStation").value=String(state.current)}
+$("#manualMove").onclick=()=>{fillManual();$("#manualSearch").value="";openModal("manualModal")};$("#manualSearch").oninput=e=>fillManual(e.target.value);$("#applyManual").onclick=()=>{const v=+$("#manualStation").value;if(v)manualSetCurrent(v,true);closeModal("manualModal")};
+function manualSetCurrent(code,log=false){if(!stations[code])return;pushUndo();state.previous=state.current;state.current=code;state.activeLine=null;state.currentMovePath=[];ensureLoopState();state.travelTrail=[code];state.stationVisitCounts[code]=(state.stationVisitCounts[code]||0)+1;if(log)addLog(`現在地を手動修正: ${stations[code].display}`);focusStation(code);render()}
+$("#stationJump").onclick=()=>{const q=$("#stationSearch").value.trim();const s=Object.values(stations).find(x=>x.display===q)||filterStations(q)[0];if(s)focusStation(s.code,1.7)};
+
+function saveLocal(){localStorage.setItem("railSugorokuSaveV013",JSON.stringify(state));addLog("ブラウザにセーブしました")}
+function loadLocal(){const raw=localStorage.getItem("railSugorokuSaveV013")||localStorage.getItem("railSugorokuSaveV012")||localStorage.getItem("railSugorokuSaveV011")||localStorage.getItem("railSugorokuSaveV010")||localStorage.getItem("railSugorokuSaveV09")||localStorage.getItem("railSugorokuSaveV08")||localStorage.getItem("railSugorokuSaveV07")||localStorage.getItem("railSugorokuSaveV06")||localStorage.getItem("railSugorokuSaveV02");if(!raw)return addLog("保存データがありません");const saved=JSON.parse(raw);if(saved.dataVersion!==DATA_VERSION)return addLog("データ版が異なるため読み込めません");saved.settings={diceSides:6,returnSides:3,moveSpeed:800,noticeTime:1600,followZoom:2.05,areaNotice:true,showAllLabels:false,allowShinkansen:false,showMoveHistory:false,...(saved.settings||{})};state=saved;ensureLoopState();addLog("セーブデータを読み込みました");render();focusStation(state.current)}
+$("#saveBtn").onclick=saveLocal;$("#loadBtn").onclick=loadLocal;
+function download(name,text,type="application/json"){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+$("#exportBtn").onclick=()=>download("rail-sugoroku-v013-save.json",JSON.stringify(state,null,2));$("#importFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;const saved=JSON.parse(await f.text());if(saved.dataVersion!==DATA_VERSION)return addLog("データ版が異なるため読み込めません");saved.settings={diceSides:6,returnSides:3,moveSpeed:800,noticeTime:1600,followZoom:2.05,areaNotice:true,showAllLabels:false,allowShinkansen:false,showMoveHistory:false,...(saved.settings||{})};state=saved;ensureLoopState();addLog("ファイルからセーブデータを読み込みました");render();focusStation(state.current)};
+
+function resultText(){const out=["【名古屋→大阪 鉄道すごろく 旅のしおり】",`データ: station_database ${DATA_VERSION}`,""];state.itinerary.forEach((x,i)=>{out.push(`${i+1}. ${x.from} → ${x.to}`);if(x.line)out.push(`   路線: ${x.line}`);out.push(`   経路: ${x.path.join(" → ")}`);if(x.mission)out.push(`   やること: ${x.mission}`);out.push("")});out.push(`ターン数: ${state.turns}`,`移動駅数: ${state.movedStations}`,"交通費: 正式運賃計算は未実装");return out.join("\n")}
+$("#openResult").onclick=()=>{$("#resultSummary").innerHTML=`<b>現在地:</b> ${state.current?escapeHtml(stations[state.current].display):"—"}　 <b>ターン:</b> ${state.turns}　 <b>移動:</b> ${state.movedStations}駅`;$("#resultText").value=resultText();openModal("resultModal")};$("#copyResult").onclick=async()=>{await navigator.clipboard.writeText($("#resultText").value);addLog("リザルトをコピーしました")};$("#downloadTxt").onclick=()=>download("旅のしおり.txt",$("#resultText").value,"text/plain;charset=utf-8");
+
+function renderLineList(q=""){const arr=selectedLineCodes.map(c=>lines[c]).filter(Boolean).filter(l=>!q||l.name.includes(q)).sort((a,b)=>a.name.localeCompare(b.name,"ja"));$("#lineList").innerHTML=arr.map(l=>`<div class="lineChip"><i class="swatch" style="background:${escapeHtml(lineColor(l))}"></i><div><b>${escapeHtml(l.name)}</b>${l.symbol?` <span class="tiny">${escapeHtml(l.symbol)}</span>`:""}</div></div>`).join("")}
+$("#openLines").onclick=()=>{$("#lineSummary").innerHTML=`<b>${Object.keys(stations).length}駅 / ${selectedLineCodes.length}路線</b><br><span class="tiny">愛知・滋賀・京都・大阪の現役駅 + 岐阜の名古屋〜滋賀接続区間。路線色はデータベース収録色を使用。</span>`;$("#lineFilter").value="";renderLineList();openModal("linesModal")};$("#lineFilter").oninput=e=>renderLineList(e.target.value.trim());
+
+$("#zoomIn").onclick=()=>setView(Math.min(view.scale+.18,4.5),view.x,view.y);$("#zoomOut").onclick=()=>setView(Math.max(view.scale-.15,.15),view.x,view.y);$("#zoomFit").onclick=fitMap;
+// ドラッグ操作は地図レイヤーだけで受ける。これによりダイス等のボタンのクリックを奪わない。
+const mapViewport=$("#mapViewport");
+mapViewport.addEventListener("wheel",e=>{e.preventDefault();const r=$("#stage").getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=view.scale,next=Math.max(.15,Math.min(4.5,old+(e.deltaY>0?-.12:.12))),worldX=(mx-view.x)/old,worldY=(my-view.y)/old;setView(next,mx-worldX*next,my-worldY*next,false)},{passive:false});
+mapViewport.addEventListener("pointerdown",e=>{if(e.button!==0||e.target.closest(".station"))return;drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};mapViewport.setPointerCapture(e.pointerId)});
+mapViewport.addEventListener("pointermove",e=>{if(!drag)return;setView(view.scale,drag.vx+(e.clientX-drag.x),drag.vy+(e.clientY-drag.y),false)});
+mapViewport.addEventListener("pointerup",()=>drag=null);mapViewport.addEventListener("pointercancel",()=>drag=null);
+window.addEventListener("resize",()=>{if(networkReady&&view.scale<.7)fitMap();else scheduleLabelLayout()});
+
+loadRailData();
+</script>
+</body>
+</html>
