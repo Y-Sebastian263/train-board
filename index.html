@@ -9,13 +9,13 @@ html,body{height:100%;margin:0;background:#0b1020;color:#fff;font-family:system-
 </style>
 </head>
 <body>
-<div id="loading"><div><h1>鉄道すごろく v0.24</h1><p>再デプロイ版を読み込み中…</p></div></div>
+<div id="loading"><div><h1>鉄道すごろく v0.24</h1><p>読み込み中…</p></div></div>
 <script>
 (async()=>{
   try{
-    const stamp="20260906-0236";
+    const stamp=Date.now();
     const paths=["v024/part00.b64","v024/part01.b64","v024/part02.b64","v024/part03.b64","v024/part04.b64","v024/part05.b64"];
-    const parts=await Promise.all(paths.map(async p=>{const r=await fetch(`${p}?r=${stamp}`,{cache:"no-store"});if(!r.ok)throw new Error(`${p}: HTTP ${r.status}`);return (await r.text()).trim();}));
+    const parts=await Promise.all(paths.map(async p=>{const r=await fetch(`${p}?v=${stamp}`,{cache:"no-store"});if(!r.ok)throw new Error(`${p}: HTTP ${r.status}`);return (await r.text()).replace(/\s+/g,"");}));
     const raw=atob(parts.join(""));
     const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
     if(!("DecompressionStream" in window))throw new Error("このブラウザはgzip展開に対応していません");
