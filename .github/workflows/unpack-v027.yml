@@ -1,0 +1,21 @@
+name: Unpack v027 for mission animation polish
+on:
+  push:
+    paths:
+      - .github/workflows/unpack-v027.yml
+permissions:
+  contents: write
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack
+        run: cat v027/part*.b64 | tr -d '\n\r\t ' | base64 -d | gzip -dc > _v027_source.html
+      - name: Commit
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add _v027_source.html
+          git commit -m "chore: unpack source" || exit 0
+          git push
