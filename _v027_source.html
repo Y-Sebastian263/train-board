@@ -53,7 +53,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .section{background:var(--panel2);border:1px solid #263658;border-radius:14px;padding:12px;margin:0;min-width:0}.section h3{margin:0 0 9px;font-size:15px}.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.stat{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;font-size:13px;padding:4px 0;color:#dbe5f8}.log{font-size:12px;color:#cad4e8;max-height:220px;overflow:auto;line-height:1.45}.itinerary{font-size:12px;max-height:220px;overflow:auto}.item{padding:8px;border-radius:10px;background:#10182c;margin-bottom:6px;border-left:4px solid #ffd54a}.routeNote{font-size:11px;color:#b9c3d9;line-height:1.55;background:#0d1529;border:1px solid #263658;border-radius:12px;padding:10px;grid-column:1/-1}.gameSection{grid-column:span 5}.progressSection{grid-column:span 3}.saveSection{grid-column:span 4}.itinerarySection{grid-column:span 6}.logSection{grid-column:span 6}.gameSection .btn,.saveSection .btn{min-height:40px}.bottomDeck .section{box-shadow:0 8px 22px #0003}
 .modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:100;padding:16px}.modal.open{display:flex}.dialog{width:min(940px,96vw);max-height:92vh;overflow:auto;background:#111a31;border:1px solid #3a4b72;border-radius:18px;padding:18px}.dialog h2{margin-top:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px;color:#dce6fa}input,select,textarea{width:100%;border-radius:10px;border:1px solid #3c4d71;background:#0d1529;color:#fff;padding:9px}textarea{min-height:150px;resize:vertical}
 .notice{position:absolute;left:50%;top:43%;transform:translate(-50%,-50%) scale(.92);z-index:50;opacity:0;pointer-events:none;background:#07111df2;color:#fff;border:2px solid #fff6;border-radius:24px;padding:18px 28px;text-align:center;box-shadow:0 20px 60px #0008;transition:.25s}.notice.show{opacity:1;transform:translate(-50%,-50%) scale(1)}.notice .small{color:#cbd5e1;font-size:14px}.notice .big{font-size:clamp(28px,4vw,58px);font-weight:1000}
-.mapInfo{position:absolute;right:13px;bottom:13px;z-index:28;background:#ffffffdf;color:#17223d;border-radius:11px;padding:7px 9px;font-size:10px;max-width:45%}
+.mapInfo{position:absolute;right:13px;bottom:13px;z-index:28;background:#ffffffdf;color:#17223d;border-radius:11px;padding:7px 9px;font-size:10px;max-width:45%}.stationLabelToggle{position:absolute;right:14px;top:118px;z-index:32;border:1px solid #ffffff70;border-radius:12px;padding:9px 12px;background:#07111de8;color:#fff;font-weight:950;box-shadow:0 6px 18px #0005;cursor:pointer}.stationLabelToggle:hover{filter:brightness(1.12)}
 .loading{position:absolute;inset:0;z-index:80;background:#07111df5;display:flex;align-items:center;justify-content:center;text-align:center}.loading.hidden{display:none}.loadingBox{width:min(620px,90%);padding:24px;border:1px solid #ffffff36;border-radius:20px;background:#121d35}.loadingTitle{font-size:25px;font-weight:1000}.loadingText{font-size:13px;color:#cbd5e1;margin-top:8px;line-height:1.6}.bar{height:10px;background:#263452;border-radius:99px;overflow:hidden;margin-top:14px}.bar>div{height:100%;background:#ffd54a;width:8%;transition:width .25s}
 .lineList{display:grid;grid-template-columns:1fr 1fr;gap:6px}.lineChip{display:flex;gap:8px;align-items:center;padding:7px 8px;border-radius:10px;background:#0e172b;font-size:12px}.swatch{width:20px;height:7px;border-radius:4px;flex:0 0 auto}.tiny{font-size:11px;color:#aebbd3}.error{color:#fecaca;background:#4b1720;border:1px solid #8f2e3d;border-radius:10px;padding:10px}.specialRouteInfo{margin-top:10px;padding:11px 12px;border-radius:12px;background:#0d1529;border:1px solid #31436a;color:#dbe5f8;line-height:1.55;font-size:13px}.specialRouteInfo strong{color:#fff}.specialRoutePath{margin-top:5px;color:#aebbd3;font-size:11px;max-height:82px;overflow:auto;word-break:break-word}
 .diceReveal{position:absolute;inset:0;z-index:74;display:none;align-items:center;justify-content:center;background:#07111dc7;backdrop-filter:blur(5px);pointer-events:none}.diceReveal.show{display:flex}.diceRevealBox{min-width:min(430px,80%);padding:24px 34px;border-radius:28px;background:#0b1429ed;border:2px solid #ffffff70;text-align:center;box-shadow:0 22px 70px #0009}.diceRevealLabel{font-size:clamp(18px,2vw,28px);font-weight:900;color:#e7eefc}.diceFace{font-size:clamp(86px,11vw,150px);line-height:1;font-weight:1000;color:#ffd54a;margin:8px 0;text-shadow:0 7px 24px #0008}.diceFace.rolling{animation:dicePulse .18s ease-in-out infinite alternate}.diceRevealText{font-size:clamp(17px,2.2vw,31px);font-weight:1000}.diceRevealSub{margin-top:6px;color:#b9c6dc;font-size:13px}@keyframes dicePulse{from{transform:scale(.88) rotate(-4deg)}to{transform:scale(1.08) rotate(4deg)}}
@@ -76,7 +76,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
           <div class="hudCard progress grow"><div class="hudTitleRow"><div class="hudLabel">今回の移動</div><button type="button" class="moveHistoryToggle" id="moveHistoryToggle" aria-expanded="false" aria-controls="moveHistoryPanel" title="移動履歴を表示">＋</button></div><div class="hudBig" id="moveHeadline">路線データを読み込み中</div><div class="hudSub" id="moveDetail">愛知・滋賀・京都・大阪の全駅を準備しています</div><div class="moveHistoryPanel" id="moveHistoryPanel"><div class="moveHistoryTitle">移動履歴</div><div class="moveHistoryContent" id="moveHistoryContent">まだ移動していません</div></div></div>
         </div>
         <div class="bottomAction"><button class="diceBtn" id="rollDice" disabled>🎲 ダイスを振る</button><div class="dieResult" id="dieResult">—</div></div>
-        <div class="mapInfo" id="mapInfo">対象: 最新Excelのゲーム路線のみ｜点線=会社間の同一/近接駅エリア</div>
+        <button class="stationLabelToggle" id="stationLabelToggle" type="button">駅名拡大</button><div class="mapInfo" id="mapInfo">対象: 最新Excelのゲーム路線のみ｜点線=会社間の同一/近接駅エリア</div>
         <div class="companyLegend" aria-hidden="true"><div class="chip"><span class="sample jr"></span>JR系統</div><div class="chip"><span class="sample kt"></span>近鉄系統</div><div class="chip"><span class="sample other"></span>その他</div></div>
         <div class="notice" id="notice"><div class="small" id="noticeSmall">AREA</div><div class="big" id="noticeBig">到着！</div></div>
         <div class="diceReveal" id="diceReveal" aria-live="assertive"><div class="diceRevealBox"><div class="diceRevealLabel">🎲 通常ダイス</div><div class="diceFace" id="diceRevealFace">1</div><div class="diceRevealText" id="diceRevealText">ダイスを振っています…</div><div class="diceRevealSub">出目を3秒表示してから移動します</div></div></div>
@@ -144,7 +144,7 @@ let stations={},lines={},edges=[],graph={},selectedLineCodes=[],networkReady=fal
 let bounds={minLng:135,maxLng:138,minLat:34,maxLat:36};
 let view={scale:.25,x:0,y:0};
 let isMoving=false,isRolling=false,pendingMission=null,drag=null;
-let state={current:null,previous:null,activeLine:null,pathHistory:[],currentMovePath:[],travelTrail:[],stationVisitCounts:{},edgeVisitCounts:{},actionHistory:[],itinerary:[],logs:[],turns:0,movedStations:0,lastRoll:null,selectedService:null,settings:{diceSides:6,returnSides:3,moveSpeed:800,noticeTime:1600,followZoom:2.05,areaNotice:true,showAllLabels:false,allowShinkansen:false,showMoveHistory:false},tokenImage:null,dataVersion:DATA_VERSION};
+let state={current:null,previous:null,activeLine:null,pathHistory:[],currentMovePath:[],travelTrail:[],stationVisitCounts:{},edgeVisitCounts:{},actionHistory:[],itinerary:[],logs:[],turns:0,movedStations:0,lastRoll:null,selectedService:null,settings:{diceSides:6,returnSides:3,moveSpeed:800,noticeTime:1600,followZoom:2.05,areaNotice:true,showAllLabels:false,allowShinkansen:false,showMoveHistory:false,largeStationLabels:false},tokenImage:null,dataVersion:DATA_VERSION};
 
 
 // v0.27: 2026-09-06受領の最新版Excelを正本に再構築。
@@ -420,9 +420,9 @@ function layoutStationLabels(){
   const overlaps=(r)=>placed.some(p=>!(r.r<p.l||r.l>p.r||r.b<p.t||r.t>p.b));
   const charWidth=(txt)=>[...txt].reduce((n,ch)=>n+(ch.charCodeAt(0)>255?1:0.58),0);
   for(const o of visible){
-    const fontPx=o.isCurrent?16:o.isMajor?14:13;
+    const fontPx=state.settings.largeStationLabels?50:(o.isCurrent?16:o.isMajor?14:13);
     const strokePx=3.2;
-    const w=Math.min(190,Math.max(30,charWidth(o.s.display)*fontPx+14));
+    const w=Math.min(state.settings.largeStationLabels?520:190,Math.max(30,charWidth(o.s.display)*fontPx+14));
     const h=fontPx+13;
     // 候補位置: 右上/右下/左上/左下/右/左/上/下
     const gap=o.isMajor?9:7;
@@ -473,6 +473,7 @@ function ensureMoveHistoryState(){
   if(!Array.isArray(state.currentMovePath))state.currentMovePath=[];
   if(!state.settings||typeof state.settings!=="object")state.settings={};
   if(typeof state.settings.showMoveHistory!=="boolean")state.settings.showMoveHistory=false;
+  if(typeof state.settings.largeStationLabels!=="boolean")state.settings.largeStationLabels=false;
 }
 function updateMoveHistoryPanel(){
   ensureMoveHistoryState();
@@ -493,9 +494,11 @@ function render(){
   $("#log").innerHTML=state.logs.map(x=>`<div>・${escapeHtml(x)}</div>`).join("")||"まだ履歴はありません";
   $("#itinerary").innerHTML=state.itinerary.length?state.itinerary.map((x,i)=>`<div class="item"><b>${i+1}. ${escapeHtml(x.from)} → ${escapeHtml(x.to)}</b><br>${x.line?`🚃 ${escapeHtml(x.line)}<br>`:""}${x.mission?`🎯 ${escapeHtml(x.mission)}<br>`:""}<span style="color:#aab4cc">移動 ${x.steps}駅</span></div>`).join(""):"まだ旅程はありません";
   updateMoveHistoryPanel();
+  const labelToggle=$("#stationLabelToggle");if(labelToggle)labelToggle.textContent=state.settings.largeStationLabels?"駅名縮小":"駅名拡大";
   updateMapClasses();
 }
 $("#moveHistoryToggle").onclick=()=>{ensureMoveHistoryState();state.settings.showMoveHistory=!state.settings.showMoveHistory;updateMoveHistoryPanel()};
+$("#stationLabelToggle").onclick=()=>{ensureMoveHistoryState();state.settings.largeStationLabels=!state.settings.largeStationLabels;$("#stationLabelToggle").textContent=state.settings.largeStationLabels?"駅名縮小":"駅名拡大";scheduleLabelLayout()};
 $("#printItinerary").onclick=()=>{
   const items=state.itinerary||[];
   if(!items.length){addLog("PDF出力する旅程がありません");return}
@@ -1064,7 +1067,7 @@ $("#drawMission").onclick=async()=>{
 };$("#confirmMission").onclick=()=>{if(!pendingMission)return;pushUndo();if(!state.itinerary.length)state.itinerary.push({from:stations[state.current].display,to:stations[state.current].display,path:[stations[state.current].display],line:"",steps:0,mission:null,time:new Date().toISOString()});state.itinerary[state.itinerary.length-1].mission=pendingMission;addLog(`ミッション確定: ${pendingMission}`);closeModal("missionModal");pendingMission=null;render()};
 
 $("#openSettings").onclick=()=>{$("#diceSides").value=state.settings.diceSides;$("#returnSides").value=state.settings.returnSides;$("#moveSpeed").value=state.settings.moveSpeed;$("#noticeTime").value=state.settings.noticeTime;$("#followZoom").value=String(state.settings.followZoom);$("#areaNotice").checked=state.settings.areaNotice;$("#showAllLabels").checked=state.settings.showAllLabels;$("#allowShinkansen").checked=!!state.settings.allowShinkansen;openModal("settingsModal")};
-$("#applySettings").onclick=()=>{const keepMoveHistory=!!state.settings.showMoveHistory;state.settings={diceSides:+$("#diceSides").value||6,returnSides:+$("#returnSides").value||3,moveSpeed:+$("#moveSpeed").value||800,noticeTime:+$("#noticeTime").value||1600,followZoom:+$("#followZoom").value||2.05,areaNotice:$("#areaNotice").checked,showAllLabels:$("#showAllLabels").checked,allowShinkansen:$("#allowShinkansen").checked,showMoveHistory:keepMoveHistory};updateLabelVisibility();addLog(`設定を更新しました（新幹線移動: ${state.settings.allowShinkansen?"ON":"OFF"}）`);closeModal("settingsModal")};
+$("#applySettings").onclick=()=>{const keepMoveHistory=!!state.settings.showMoveHistory;state.settings={diceSides:+$("#diceSides").value||6,returnSides:+$("#returnSides").value||3,moveSpeed:+$("#moveSpeed").value||800,noticeTime:+$("#noticeTime").value||1600,followZoom:+$("#followZoom").value||2.05,areaNotice:$("#areaNotice").checked,showAllLabels:$("#showAllLabels").checked,allowShinkansen:$("#allowShinkansen").checked,showMoveHistory:keepMoveHistory,largeStationLabels:!!state.settings.largeStationLabels};updateLabelVisibility();addLog(`設定を更新しました（新幹線移動: ${state.settings.allowShinkansen?"ON":"OFF"}）`);closeModal("settingsModal")};
 $("#missionFile").onchange=async e=>{const f=e.target.files[0];if(f)$("#missionsText").value=await f.text()};$("#tokenImage").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{state.tokenImage=r.result;render()};r.readAsDataURL(f)};
 
 function filterStations(q=""){q=q.trim();return Object.values(stations).filter(s=>!q||s.display.includes(q)||s.name.includes(q)||(s.excelAliases||[]).some(a=>a.includes(q))).sort((a,b)=>a.display.localeCompare(b.display,"ja"))}
