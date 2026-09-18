@@ -98,7 +98,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
       <div class="section gameSection"><h3>🎮 ゲーム操作</h3><div class="row"><button class="btn primary" id="branchDice" disabled title="分岐駅に着くと自動で選択画面が出ます">分岐は到着時に選択</button><button class="btn red" id="returnDice" disabled>リターンダイス</button><button class="btn special" id="specialMove" disabled>🎯 特別指定</button><button class="btn" id="undoBtn" disabled>↶ 一手戻す</button><button class="btn" id="manualMove" disabled>現在地修正</button><button class="btn green" id="missionBtn" disabled>ミッション抽選</button></div></div>
       <div class="section progressSection"><h3>📊 進捗</h3><div class="stat"><span>ターン</span><strong id="turnCount">0</strong></div><div class="stat"><span>移動した駅数</span><strong id="stationCount">0</strong></div><div class="stat"><span>決定ミッション</span><strong id="missionCount">0</strong></div><div class="stat"><span>収録駅 / 路線</span><strong id="networkCount">—</strong></div><div class="stat"><span>交通費</span><strong id="fareTotal">次工程</strong></div></div>
       <div class="section saveSection"><h3>💾 セーブ / ロード</h3><div class="row"><button class="btn green" id="saveBtn">ブラウザ保存</button><button class="btn" id="loadBtn">続きから</button><button class="btn" id="exportBtn">書き出し</button><label class="btn" style="margin:0">読み込み<input id="importFile" type="file" accept=".json" hidden></label></div></div>
-      <div class="section itinerarySection"><h3>🧳 旅程リスト</h3><div class="itinerary" id="itinerary"></div></div>
+      <div class="section itinerarySection"><div class="row" style="margin-bottom:9px"><h3 style="margin:0;margin-right:auto">🧳 旅程リスト</h3><button class="btn" id="printItinerary">📄 PDF出力</button></div><div class="itinerary" id="itinerary"></div></div>
       <div class="section logSection"><h3>🧾 履歴ログ</h3><div class="log" id="log"></div></div>
       <div class="routeNote"><b>ゲーム条件・停車種別・備考は最新版「名阪間すごろく.xlsx」を正本</b>です。PDFはJR/近鉄ごとの見た目・配色・駅マーカーの参考にのみ使い、PDFに載っていてもExcelにない路線は表示しません。駅の緯度経度だけ station_database v20260831 から取得し、日本地図上の位置関係を保っています。</div>
     </aside>
@@ -496,6 +496,15 @@ function render(){
   updateMapClasses();
 }
 $("#moveHistoryToggle").onclick=()=>{ensureMoveHistoryState();state.settings.showMoveHistory=!state.settings.showMoveHistory;updateMoveHistoryPanel()};
+$("#printItinerary").onclick=()=>{
+  const items=state.itinerary||[];
+  if(!items.length){addLog("PDF出力する旅程がありません");return}
+  const rows=items.map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.from||"")}</td><td>${escapeHtml(x.to||"")}</td><td>${escapeHtml(x.line||"")}</td><td>${Number(x.steps)||0}</td><td>${escapeHtml(x.mission||"")}</td></tr>`).join("");
+  const w=window.open("","_blank");
+  if(!w){addLog("PDF出力画面を開けませんでした。ポップアップを許可してください");return}
+  w.document.write(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>鉄道すごろく 旅程リスト</title><style>@page{size:A4;margin:14mm}body{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#111}h1{font-size:22px;margin:0 0 6px}.meta{font-size:11px;color:#555;margin-bottom:14px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #aaa;padding:6px;text-align:left;vertical-align:top}th{background:#eee}td:nth-child(1),td:nth-child(5){text-align:center;white-space:nowrap}.note{margin-top:12px;font-size:10px;color:#666}@media print{button{display:none}}</style></head><body><h1>🚃 鉄道すごろく 旅程リスト</h1><div class="meta">出力日時：${new Date().toLocaleString("ja-JP")} ｜ ターン：${state.turns} ｜ 移動駅数：${state.movedStations}</div><table><thead><tr><th>No.</th><th>出発</th><th>到着</th><th>路線 / 種別</th><th>移動</th><th>ミッション</th></tr></thead><tbody>${rows}</tbody></table><div class="note">印刷画面で「PDFに保存」を選択してください。</div><script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
+  w.document.close();
+};
 function showNotice(small,big){$("#noticeSmall").textContent=small;$("#noticeBig").textContent=big;$("#notice").classList.add("show");setTimeout(()=>$("#notice").classList.remove("show"),state.settings.noticeTime)}
 function snapshot(){const copy=JSON.parse(JSON.stringify(state));copy.actionHistory=[];return copy}
 function pushUndo(){state.actionHistory.push(snapshot());if(state.actionHistory.length>40)state.actionHistory.shift()}
@@ -1043,7 +1052,16 @@ $("#applySpecial").onclick=()=>{const target=Number($("#specialStation").value);
 
 function missionList(){return $("#missionsText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}
 function openModal(id){$("#"+id).classList.add("open")}function closeModal(id){$("#"+id).classList.remove("open")}document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
-$("#missionBtn").onclick=()=>openModal("missionModal");$("#drawMission").onclick=()=>{const list=missionList();pendingMission=list.length?list[Math.floor(Math.random()*list.length)]:"候補がありません";$("#missionResult").textContent=pendingMission};$("#confirmMission").onclick=()=>{if(!pendingMission)return;pushUndo();if(!state.itinerary.length)state.itinerary.push({from:stations[state.current].display,to:stations[state.current].display,path:[stations[state.current].display],line:"",steps:0,mission:null,time:new Date().toISOString()});state.itinerary[state.itinerary.length-1].mission=pendingMission;addLog(`ミッション確定: ${pendingMission}`);closeModal("missionModal");pendingMission=null;render()};
+$("#missionBtn").onclick=()=>openModal("missionModal");
+$("#drawMission").onclick=async()=>{
+  const list=missionList(),result=$("#missionResult"),btn=$("#drawMission"),confirm=$("#confirmMission");
+  if(!list.length){pendingMission="候補がありません";result.textContent=pendingMission;return}
+  btn.disabled=true;confirm.disabled=true;result.classList.add("rolling");
+  const timer=setInterval(()=>{result.textContent=list[Math.floor(Math.random()*list.length)]},90);
+  await sleep(900);clearInterval(timer);result.classList.remove("rolling");
+  pendingMission=list[Math.floor(Math.random()*list.length)];result.textContent=pendingMission;
+  await sleep(2100);btn.disabled=false;confirm.disabled=false;
+};$("#confirmMission").onclick=()=>{if(!pendingMission)return;pushUndo();if(!state.itinerary.length)state.itinerary.push({from:stations[state.current].display,to:stations[state.current].display,path:[stations[state.current].display],line:"",steps:0,mission:null,time:new Date().toISOString()});state.itinerary[state.itinerary.length-1].mission=pendingMission;addLog(`ミッション確定: ${pendingMission}`);closeModal("missionModal");pendingMission=null;render()};
 
 $("#openSettings").onclick=()=>{$("#diceSides").value=state.settings.diceSides;$("#returnSides").value=state.settings.returnSides;$("#moveSpeed").value=state.settings.moveSpeed;$("#noticeTime").value=state.settings.noticeTime;$("#followZoom").value=String(state.settings.followZoom);$("#areaNotice").checked=state.settings.areaNotice;$("#showAllLabels").checked=state.settings.showAllLabels;$("#allowShinkansen").checked=!!state.settings.allowShinkansen;openModal("settingsModal")};
 $("#applySettings").onclick=()=>{const keepMoveHistory=!!state.settings.showMoveHistory;state.settings={diceSides:+$("#diceSides").value||6,returnSides:+$("#returnSides").value||3,moveSpeed:+$("#moveSpeed").value||800,noticeTime:+$("#noticeTime").value||1600,followZoom:+$("#followZoom").value||2.05,areaNotice:$("#areaNotice").checked,showAllLabels:$("#showAllLabels").checked,allowShinkansen:$("#allowShinkansen").checked,showMoveHistory:keepMoveHistory};updateLabelVisibility();addLog(`設定を更新しました（新幹線移動: ${state.settings.allowShinkansen?"ON":"OFF"}）`);closeModal("settingsModal")};
