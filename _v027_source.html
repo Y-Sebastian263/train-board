@@ -75,7 +75,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
           <div class="hudCard currentHud"><div class="hudLabel">現在地</div><div class="hudBig" id="currentStation">読み込み中</div><div class="hudSub" id="currentLine">—</div></div>
           <div class="hudCard progress grow"><div class="hudTitleRow"><div class="hudLabel">今回の移動</div><button type="button" class="moveHistoryToggle" id="moveHistoryToggle" aria-expanded="false" aria-controls="moveHistoryPanel" title="移動履歴を表示">＋</button></div><div class="hudBig" id="moveHeadline">路線データを読み込み中</div><div class="hudSub" id="moveDetail">愛知・滋賀・京都・大阪の全駅を準備しています</div><div class="moveHistoryPanel" id="moveHistoryPanel"><div class="moveHistoryTitle">移動履歴</div><div class="moveHistoryContent" id="moveHistoryContent">まだ移動していません</div></div></div>
         </div>
-        <div class="bottomAction"><button class="diceBtn" id="rollDice" disabled>🎲 ダイスを振る</button><div class="dieResult" id="dieResult">—</div></div>
+        <div class="bottomAction"><button class="diceBtn" id="rollDice" disabled>🎲 ダイスを振る</button><div class="dieResult" id="dieResult">—</div><button class="btn green" id="mapMissionBtn" disabled style="min-height:56px;padding:12px 16px;font-size:18px;font-weight:950">🎯 ミッション抽選</button></div>
         <button class="stationLabelToggle" id="stationLabelToggle" type="button">駅名拡大</button><div class="mapInfo" id="mapInfo">対象: 最新Excelのゲーム路線のみ｜点線=会社間の同一/近接駅エリア</div>
         <div class="companyLegend" aria-hidden="true"><div class="chip"><span class="sample jr"></span>JR系統</div><div class="chip"><span class="sample kt"></span>近鉄系統</div><div class="chip"><span class="sample other"></span>その他</div></div>
         <div class="notice" id="notice"><div class="small" id="noticeSmall">AREA</div><div class="big" id="noticeBig">到着！</div></div>
@@ -469,7 +469,7 @@ function fitMap(){const box=$("#stage").getBoundingClientRect(),scale=Math.min(b
 function focusStation(id,scale=state.settings.followZoom){const s=stations[id];if(!s)return;const box=$("#stage").getBoundingClientRect();setView(scale,box.width/2-s.x*scale,box.height/2-s.y*scale,true)}
 function movementFocusScale(){return Math.min(4.5,Math.max(.15,(state.settings.followZoom||2.05)*2))}
 function focusStationDuringMove(id){focusStation(id,movementFocusScale())}
-function enableControls(on){["#rollDice","#returnDice","#specialMove","#specialDiceMove","#undoBtn","#manualMove","#missionBtn"].forEach(q=>{const el=$(q);if(el)el.disabled=!on});const bi=$("#branchDice");if(bi)bi.disabled=true}
+function enableControls(on){["#rollDice","#returnDice","#specialMove","#specialDiceMove","#undoBtn","#manualMove","#missionBtn","#mapMissionBtn"].forEach(q=>{const el=$(q);if(el)el.disabled=!on});const bi=$("#branchDice");if(bi)bi.disabled=true}
 
 function addLog(msg){state.logs.unshift(`${new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}　${msg}`);state.logs=state.logs.slice(0,120);render()}
 function ensureMoveHistoryState(){
@@ -1094,7 +1094,7 @@ $("#specialDiceValue").addEventListener("keydown",e=>{if(e.key==="Enter"){e.prev
 
 function missionList(){return $("#missionsText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}
 function openModal(id){$("#"+id).classList.add("open")}function closeModal(id){$("#"+id).classList.remove("open")}document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
-$("#missionBtn").onclick=()=>openModal("missionModal");
+$("#missionBtn").onclick=()=>openModal("missionModal");$("#mapMissionBtn").onclick=()=>openModal("missionModal");
 $("#drawMission").onclick=async()=>{
   const list=missionList(),result=$("#missionResult"),btn=$("#drawMission"),confirm=$("#confirmMission");
   if(!list.length){pendingMission="候補がありません";result.textContent=pendingMission;return}
