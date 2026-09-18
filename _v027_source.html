@@ -129,6 +129,8 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 
 <div class="modal" id="specialDiceModal"><div class="dialog" style="max-width:560px"><div class="row"><h2 style="margin-right:auto">🎲 特別指定(ダイス指定)</h2><button class="btn" data-close="specialDiceModal">閉じる</button></div><div class="tiny">ダイス抽選は行わず、指定した数字をそのまま今回の出目として使用します。移動ルール・列車種別選択・強制ストップは通常ダイスと同じです。</div><label>指定する出目</label><input id="specialDiceValue" type="number" min="1" max="999" step="1" value="6" inputmode="numeric"><div class="row" style="margin-top:12px"><button class="btn special" id="applySpecialDice">この出目で進む</button></div></div></div>
 
+<div class="modal" id="itineraryPreviewModal"><div class="dialog" style="width:min(980px,96vw)"><div class="row"><h2 style="margin-right:auto">📄 旅程リスト PDFプレビュー</h2><button class="btn" data-close="itineraryPreviewModal">閉じる</button></div><div class="tiny" style="margin-bottom:10px">PDFに出力する内容を確認してください。</div><div id="itineraryPreviewContent" class="section" style="overflow:auto;max-height:62vh"></div><div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn" data-close="itineraryPreviewModal">キャンセル</button><button class="btn primary" id="confirmPrintItinerary">この内容でPDF出力</button></div></div></div>
+
 <div class="modal" id="resultModal"><div class="dialog"><div class="row"><h2 style="margin-right:auto">🏁 今回の旅のしおり / リザルト</h2><button class="btn" data-close="resultModal">閉じる</button></div><div class="section" id="resultSummary"></div><textarea id="resultText" style="min-height:300px"></textarea><div class="row"><button class="btn primary" id="copyResult">コピー</button><button class="btn" id="downloadTxt">TXT保存</button></div></div></div>
 
 <div class="modal" id="linesModal"><div class="dialog"><div class="row"><h2 style="margin-right:auto">🗺️ 収録路線一覧</h2><button class="btn" data-close="linesModal">閉じる</button></div><div class="section"><div id="lineSummary">読み込み中</div></div><input id="lineFilter" placeholder="路線名で絞り込み"><div class="lineList" id="lineList" style="margin-top:10px"></div></div></div>
@@ -512,10 +514,21 @@ function render(){
 }
 $("#moveHistoryToggle").onclick=()=>{ensureMoveHistoryState();state.settings.showMoveHistory=!state.settings.showMoveHistory;updateMoveHistoryPanel()};
 $("#stationLabelToggle").onclick=()=>{ensureMoveHistoryState();state.settings.largeStationLabels=!state.settings.largeStationLabels;$("#stationLabelToggle").textContent=state.settings.largeStationLabels?"駅名縮小":"駅名拡大";scheduleLabelLayout()};
+function itineraryRowsHtml(){
+  return (state.itinerary||[]).map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.from||"")}</td><td>${escapeHtml(x.to||"")}</td><td>${escapeHtml(x.line||"")}</td><td>${Number(x.steps)||0}</td><td>${escapeHtml(x.mission||"")}</td></tr>`).join("");
+}
+function itineraryTableHtml(){
+  return `<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="border:1px solid #52617e;padding:7px">No.</th><th style="border:1px solid #52617e;padding:7px">出発</th><th style="border:1px solid #52617e;padding:7px">到着</th><th style="border:1px solid #52617e;padding:7px">路線 / 種別</th><th style="border:1px solid #52617e;padding:7px">移動</th><th style="border:1px solid #52617e;padding:7px">ミッション</th></tr></thead><tbody>${itineraryRowsHtml()}</tbody></table>`;
+}
 $("#printItinerary").onclick=()=>{
   const items=state.itinerary||[];
   if(!items.length){addLog("PDF出力する旅程がありません");return}
-  const rows=items.map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.from||"")}</td><td>${escapeHtml(x.to||"")}</td><td>${escapeHtml(x.line||"")}</td><td>${Number(x.steps)||0}</td><td>${escapeHtml(x.mission||"")}</td></tr>`).join("");
+  $("#itineraryPreviewContent").innerHTML=`<div style="margin-bottom:10px"><b>ターン：</b>${state.turns}　<b>移動駅数：</b>${state.movedStations}　<b>旅程数：</b>${items.length}</div>${itineraryTableHtml()}`;
+  openModal("itineraryPreviewModal");
+};
+$("#confirmPrintItinerary").onclick=()=>{
+  const rows=itineraryRowsHtml();
+  closeModal("itineraryPreviewModal");
   const w=window.open("","_blank");
   if(!w){addLog("PDF出力画面を開けませんでした。ポップアップを許可してください");return}
   w.document.write(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>鉄道すごろく 旅程リスト</title><style>@page{size:A4;margin:14mm}body{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#111}h1{font-size:22px;margin:0 0 6px}.meta{font-size:11px;color:#555;margin-bottom:14px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #aaa;padding:6px;text-align:left;vertical-align:top}th{background:#eee}td:nth-child(1),td:nth-child(5){text-align:center;white-space:nowrap}.note{margin-top:12px;font-size:10px;color:#666}@media print{button{display:none}}</style></head><body><h1>🚃 鉄道すごろく 旅程リスト</h1><div class="meta">出力日時：${new Date().toLocaleString("ja-JP")} ｜ ターン：${state.turns} ｜ 移動駅数：${state.movedStations}</div><table><thead><tr><th>No.</th><th>出発</th><th>到着</th><th>路線 / 種別</th><th>移動</th><th>ミッション</th></tr></thead><tbody>${rows}</tbody></table><div class="note">印刷画面で「PDFに保存」を選択してください。</div><script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
