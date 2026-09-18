@@ -897,10 +897,16 @@ async function doMove(steps,mode="normal"){
       }
     }else{
       const scoped=routeScopedMovementEdges(state.current,directionPrevious);
-      directionEdge=scoped.find(e=>Number(e.line)===lockedDirection.line && directionSignForEdge(e.line,state.current,e)===lockedDirection.sign)
+      const sameDirection=scoped.find(e=>Number(e.line)===lockedDirection.line && directionSignForEdge(e.line,state.current,e)===lockedDirection.sign);
+      directionEdge=sameDirection
         || scoped.find(e=>Number(e.line)===lockedDirection.line)
         || scoped[0]
         || null;
+      // 終端駅で同じ向きの線路が無く折り返した場合は、固定方向も実際の進行方向へ更新する。
+      // これをしないと大阪→京都方面へ折り返した後、途中駅で古い「大阪方面」へ再反転してしまう。
+      if(directionEdge&&!sameDirection){
+        lockedDirection={line:Number(directionEdge.line),sign:directionSignForEdge(directionEdge.line,state.current,directionEdge)};
+      }
     }
     if(!directionEdge)break;
     const lineChanged=usedLine!==directionEdge.line;
