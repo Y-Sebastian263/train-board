@@ -1117,6 +1117,7 @@ $("#drawMission").onclick=async()=>{
   const list=missionList(),result=$("#missionResult"),btn=$("#drawMission"),confirm=$("#confirmMission"),hint=$("#missionConfirmHint");
   if(!list.length){pendingMission=null;result.textContent="候補がありません";hint.classList.remove("show");confirm.disabled=true;return}
   btn.disabled=true;confirm.disabled=true;hint.classList.remove("show");
+  closeModal("missionModal");
   const overlay=$("#missionReveal"),reveal=$("#missionRevealResult"),text=$("#missionRevealText");
   overlay.classList.add("show");reveal.classList.add("rolling");text.textContent="ミッションを抽選しています…";
   const timer=setInterval(()=>{reveal.textContent=list[Math.floor(Math.random()*list.length)]},90);
@@ -1127,6 +1128,7 @@ $("#drawMission").onclick=async()=>{
   result.textContent=pendingMission;
   hint.classList.add("show");
   btn.disabled=false;confirm.disabled=false;
+  openModal("missionModal");
 };$("#confirmMission").onclick=()=>{if(!pendingMission)return;pushUndo();if(!state.itinerary.length)state.itinerary.push({from:stations[state.current].display,to:stations[state.current].display,path:[stations[state.current].display],line:"",steps:0,mission:null,time:new Date().toISOString()});state.itinerary[state.itinerary.length-1].mission=pendingMission;addLog(`ミッション確定: ${pendingMission}`);$("#missionConfirmHint").classList.remove("show");closeModal("missionModal");pendingMission=null;render()};
 
 $("#openSettings").onclick=()=>{$("#diceSides").value=state.settings.diceSides;$("#returnSides").value=state.settings.returnSides;$("#moveSpeed").value=state.settings.moveSpeed;$("#noticeTime").value=state.settings.noticeTime;$("#followZoom").value=String(state.settings.followZoom);$("#areaNotice").checked=state.settings.areaNotice;$("#showAllLabels").checked=state.settings.showAllLabels;$("#allowShinkansen").checked=!!state.settings.allowShinkansen;openModal("settingsModal")};
