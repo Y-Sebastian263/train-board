@@ -1,0 +1,56 @@
+name: Fix terminal bounce direction
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-terminal-bounce.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch movement direction and repack
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('_v027_source.html')
+          s=p.read_text(encoding='utf-8')
+          old='''    }else{
+      const scoped=routeScopedMovementEdges(state.current,directionPrevious);
+      directionEdge=scoped.find(e=>Number(e.line)===lockedDirection.line && directionSignForEdge(e.line,state.current,e)===lockedDirection.sign)
+        || scoped.find(e=>Number(e.line)===lockedDirection.line)
+        || scoped[0]
+        || null;
+    }
+'''
+          new='''    }else{
+      const scoped=routeScopedMovementEdges(state.current,directionPrevious);
+      const sameDirection=scoped.find(e=>Number(e.line)===lockedDirection.line && directionSignForEdge(e.line,state.current,e)===lockedDirection.sign);
+      directionEdge=sameDirection
+        || scoped.find(e=>Number(e.line)===lockedDirection.line)
+        || scoped[0]
+        || null;
+      // 終端駅で同じ向きの線路が無く折り返した場合は、固定方向も実際の進行方向へ更新する。
+      // これをしないと大阪→京都方面へ折り返した後、途中駅で古い「大阪方面」へ再反転してしまう。
+      if(directionEdge&&!sameDirection){
+        lockedDirection={line:Number(directionEdge.line),sign:directionSignForEdge(directionEdge.line,state.current,directionEdge)};
+      }
+    }
+'''
+          if old not in s:
+              raise SystemExit('target movement block not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          rm -f v027/part*.b64
+          gzip -9 -c _v027_source.html | base64 -w0 | fold -w8000 | awk '{printf "%s", $0 > sprintf("v027/part%02d.b64", NR-1); close(sprintf("v027/part%02d.b64", NR-1))}'
+          rm -f _v027_source.html .github/workflows/unpack-v027.yml .github/workflows/fix-terminal-bounce.yml
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix direction lock after terminal turnaround"
+          git push
