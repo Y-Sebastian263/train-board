@@ -1089,9 +1089,24 @@ $("#zoomIn").onclick=()=>setView(Math.min(view.scale+.18,4.5),view.x,view.y);$("
 // ドラッグ操作は地図レイヤーだけで受ける。これによりダイス等のボタンのクリックを奪わない。
 const mapViewport=$("#mapViewport");
 mapViewport.addEventListener("wheel",e=>{e.preventDefault();const r=$("#stage").getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=view.scale,next=Math.max(.15,Math.min(4.5,old+(e.deltaY>0?-.12:.12))),worldX=(mx-view.x)/old,worldY=(my-view.y)/old;setView(next,mx-worldX*next,my-worldY*next,false)},{passive:false});
-mapViewport.addEventListener("pointerdown",e=>{if(e.button!==0||e.target.closest(".station"))return;drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};mapViewport.setPointerCapture(e.pointerId)});
-mapViewport.addEventListener("pointermove",e=>{if(!drag)return;setView(view.scale,drag.vx+(e.clientX-drag.x),drag.vy+(e.clientY-drag.y),false)});
-mapViewport.addEventListener("pointerup",()=>drag=null);mapViewport.addEventListener("pointercancel",()=>drag=null);
+mapViewport.addEventListener("pointerdown",e=>{
+  if(e.button!==0)return;
+  drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y,pointerId:e.pointerId};
+  try{mapViewport.setPointerCapture(e.pointerId)}catch(_){}
+});
+mapViewport.addEventListener("pointermove",e=>{
+  if(!drag||e.pointerId!==drag.pointerId)return;
+  setView(view.scale,drag.vx+(e.clientX-drag.x),drag.vy+(e.clientY-drag.y),false);
+});
+const endMapDrag=e=>{
+  if(!drag)return;
+  const id=drag.pointerId;
+  drag=null;
+  try{if(mapViewport.hasPointerCapture(id))mapViewport.releasePointerCapture(id)}catch(_){}
+};
+mapViewport.addEventListener("pointerup",endMapDrag);
+mapViewport.addEventListener("pointercancel",endMapDrag);
+mapViewport.addEventListener("lostpointercapture",()=>{drag=null});
 window.addEventListener("resize",()=>{if(networkReady&&view.scale<.7)fitMap();else scheduleLabelLayout()});
 
 loadRailData();
